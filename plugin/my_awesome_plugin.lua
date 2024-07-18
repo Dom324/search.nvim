@@ -6,3 +6,7 @@ vim.api.nvim_create_user_command("PluginName", function(args)
   assert(b, "b must be a number")
   require("my_awesome_plugin").main(a, b, func)
 end, { nargs = "+" })
+
+vim.api.nvim_create_user_command("Search", function(args)
+  require("my_awesome_plugin.search").toggle()
+end, { nargs = 0})

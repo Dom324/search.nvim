@@ -45,6 +45,7 @@ local function search_handler(options, signal)
     on_start = function()
       spectre_state.is_running = true
       start_time = vim.loop.hrtime()
+      signal.is_search_loading = true
     end,
     on_result = function(item)
       if not spectre_state.is_running then
@@ -68,6 +69,7 @@ local function search_handler(options, signal)
 
       signal.search_results = M.process(options)
       signal.search_info = string.format("Total: %s match, time: %ss", total, end_time)
+      signal.is_search_loading = false
 
       spectre_state.finder_instance = nil
       spectre_state.is_running = false
@@ -90,7 +92,7 @@ function M.search(options, signal)
   M.stop()
 
   local search_engine = spectre_search["rg"]
-  spectre_state.options["ignore-case"] = not options.is_case_sensitive_checked
+  spectre_state.options["ignore-case"] = not options.is_case_insensitive_checked
   spectre_state.finder_instance =
     search_engine:new(spectre_state_utils.get_search_engine_config(), search_handler(options, signal))
   spectre_state.regex = require("spectre.regex.vim")

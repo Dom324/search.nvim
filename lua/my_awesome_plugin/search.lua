@@ -3,6 +3,7 @@ require("my_awesome_plugin.highlight")
 local fn = require("my_awesome_plugin.fn")
 
 local n = require("nui-components")
+local spinner_formats = require("nui-components.utils.spinner-formats")
 
 local M = {}
 
@@ -12,16 +13,16 @@ function M.toggle()
   local win_height = vim.api.nvim_win_get_height(0)
 
   local padding_horizontal = math.floor(win_width * 0.1)
-  local padding_vertical = math.floor(win_height * 0.05)
+  local padding_vertical = math.floor(win_height * 0.025)
 
   local renderer = n.create_renderer({
     width = win_width - 2 * padding_horizontal,
     height = win_height - 2 * padding_vertical,
     relative = "editor",
-  --  position = {
-  --    row = padding_horizontal,
-  --    col = padding_vertical,
-  --  },
+    position = {
+      row = padding_vertical,
+      col = padding_horizontal,
+    },
   })
 
   local signal = n.create_signal({
@@ -29,16 +30,18 @@ function M.toggle()
     replace_query = "",
     search_paths = {},
     exclude_paths = {},
-    is_case_sensitive_checked = false,
+    is_case_insensitive_checked = false,
     is_git_checked = false,
     is_hidden_checked = false,
     is_whole_word_checked = false,
     search_info = "",
     search_results = {},
+    file_results = {},
+    is_search_loading = false
   })
 
   local subscription = signal:observe(function(prev, curr)
-    local diff = fn.isome({ "search_query", "is_case_sensitive_checked", "search_paths" }, function(key)
+    local diff = fn.isome({ "search_query", "is_case_insensitive_checked", "search_paths" }, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
 
@@ -212,23 +215,27 @@ function M.toggle()
           align = "center",
           is_focusable = false,
         }),
-        search_tree({
-          search_query = signal.search_query,
-          replace_query = signal.replace_query,
-          data = signal.search_results,
-          origin_winid = renderer:get_origin_winid(),
-          hidden = signal.search_results:map(function(value)
-            return #value == 0
-          end),
-        }),
-        n.text_input({
-          border_label = "Search",
-          autofocus = true,
-          max_lines = 1,
-          on_change = fn.debounce(function(value)
-            signal.search_query = value
-          end, 400),
-        }),
+        n.columns(
+          { size = 2 },
+          n.text_input({
+            border_label = "Search",
+            autofocus = true,
+            max_lines = 1,
+            flex = 1,
+            on_change = fn.debounce(function(value)
+              signal.search_query = value
+            end, 400),
+          }),
+          n.rows(
+          { size = 2 },
+            n.gap(1),
+            n.spinner({
+              is_loading = signal.is_search_loading,
+              frames = spinner_formats.dots_9,
+            })
+          )
+        ),
+        n.gap(1),
         n.text_input({
           border_label = "Replace",
           autofocus = true,
@@ -244,9 +251,9 @@ function M.toggle()
             default_sign = "abc",
             checked_sign = "AbC",
             border_style = "rounded",
-            value = signal.is_case_sensitive_checked,
+            value = signal.is_case_insensitive_checked,
             on_change = function(is_checked)
-              signal.is_case_sensitive_checked = is_checked
+              signal.is_case_insensitive_checked = is_checked
             end,
           }),
           n.checkbox({
@@ -259,7 +266,17 @@ function M.toggle()
               signal.is_whole_word_checked = is_checked
             end,
           })
-        )
+        ),
+        n.gap(1),
+        search_tree({
+          search_query = signal.search_query,
+          replace_query = signal.replace_query,
+          data = signal.search_results,
+          origin_winid = renderer:get_origin_winid(),
+          hidden = signal.search_results:map(function(value)
+            return #value == 0
+          end),
+        })
       ),
         n.paragraph({
           lines = "Preview",

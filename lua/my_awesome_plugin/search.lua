@@ -1,4 +1,5 @@
 local engine = require("my_awesome_plugin.engine")
+require("my_awesome_plugin.highlight")
 local fn = require("my_awesome_plugin.fn")
 
 local n = require("nui-components")
@@ -50,9 +51,9 @@ function M.toggle()
       end
     end
 
-    --if not (prev.replace_query == curr.replace_query) and #curr.search_query > 2 then
-    --  signal.search_results = engine.process(curr)
-    --end
+    if not (prev.replace_query == curr.replace_query) and #curr.search_query > 2 then
+      signal.search_results = engine.process(curr)
+    end
   end)
 
   local function on_select(origin_winid)
@@ -239,9 +240,9 @@ function M.toggle()
         n.columns(
           { size = 2 },
           n.checkbox({
-            label = "Aa",
-            default_sign = "",
-            checked_sign = "",
+            label = "",
+            default_sign = "abc",
+            checked_sign = "AbC",
             border_style = "rounded",
             value = signal.is_case_sensitive_checked,
             on_change = function(is_checked)

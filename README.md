@@ -1,3 +1,6 @@
+Dumy chanfe`
+
+
 <h1 align="center">✨ My Awesome Plugin ✨</h1>
 
 <p align="center">

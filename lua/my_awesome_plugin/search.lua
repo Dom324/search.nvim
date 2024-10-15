@@ -5,6 +5,20 @@ local fn = require("my_awesome_plugin.fn")
 local n = require("nui-components")
 local spinner_formats = require("nui-components.utils.spinner-formats")
 
+local WORD_KEY = "<C-w>"
+local CAPITAL_KEY = "<C-a>"
+local HIDDEN_KEY = "<C-h>"
+local SEARCH_MODE_KEY = "<C-d>"
+
+local SEARCH_MODE_PROJECT_STR = "  Project "
+local SEARCH_MODE_GIT_STR = "    Git   "
+local SEARCH_MODE_GLOBAL_STR = "  Global  "
+
+local SEARCH_MODE_PROJECT = 0
+local SEARCH_MODE_GIT = 1
+local SEARCH_MODE_GLOBAL = 2
+
+
 local M = {}
 
 function M.toggle()
@@ -31,10 +45,11 @@ function M.toggle()
     search_paths = {},
     exclude_paths = {},
     is_case_insensitive_checked = false,
-    is_git_checked = false,
     is_hidden_checked = false,
     is_whole_word_checked = false,
     search_info = "",
+    search_mode = SEARCH_MODE_PROJECT,
+    search_mode_str = SEARCH_MODE_PROJECT_STR,
     search_results = {},
     file_results = {},
     is_search_loading = false
@@ -148,7 +163,7 @@ function M.toggle()
   local function search_tree(props)
     return n.tree({
       border_style = "none",
-      flex = 1,
+      flex = 50,
       padding = {
         left = 1,
         right = 1,
@@ -165,7 +180,7 @@ function M.toggle()
     return n.columns(
       n.rows(
         n.paragraph({
-          lines = "Files tree",
+          lines = "File tree",
           align = "center",
           is_focusable = false,
         }),
@@ -173,8 +188,13 @@ function M.toggle()
           border_label = "Include files",
           autofocus = true,
           max_lines = 1,
+          value = signal.search_paths:map(function(paths)
+            return table.concat(paths, ",")
+          end),
           on_change = fn.debounce(function(value)
-            signal.search_paths = value
+            signal.search_paths = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
+              return path == ""
+            end)
           end, 400),
         }),
         n.text_input({
@@ -187,14 +207,26 @@ function M.toggle()
         }),
         n.columns(
           { size = 2 },
-          n.checkbox({
-            label = "Git",
-            default_sign = "",
-            checked_sign = "",
+          n.gap({ flex = 1 }),
+          n.button({
+            label = signal.search_mode_str,
+            is_focusable = false,
             border_style = "rounded",
-            value = signal.is_git_checked,
-            on_change = function(is_checked)
-              signal.is_git_checked = is_checked
+            border_label = "Search mode " .. SEARCH_MODE_KEY,
+            global_press_key = SEARCH_MODE_KEY,
+            on_press = function()
+                -- Carousel option
+                local curr_search_mode = signal.search_mode:get_value()
+                if curr_search_mode == SEARCH_MODE_GIT then
+                    signal.search_mode = SEARCH_MODE_PROJECT
+                    signal.search_mode_str = SEARCH_MODE_PROJECT_STR
+                elseif curr_search_mode == SEARCH_MODE_PROJECT then
+                    signal.search_mode = SEARCH_MODE_GLOBAL
+                    signal.search_mode_str = SEARCH_MODE_GLOBAL_STR
+                else
+                    signal.search_mode = SEARCH_MODE_GIT
+                    signal.search_mode_str = SEARCH_MODE_GIT_STR
+                end
             end,
           }),
           n.checkbox({
@@ -203,11 +235,16 @@ function M.toggle()
             checked_sign = "",
             border_style = "rounded",
             value = signal.is_hidden_checked,
+            is_focusable = false,
+            border_label = HIDDEN_KEY,
+            press_key = HIDDEN_KEY,
             on_change = function(is_checked)
               signal.is_hidden_checked = is_checked
             end,
           })
-        )
+        ),
+        n.gap(1),
+        n.gap({ flex = 1 })
       ),
       n.rows(
         n.paragraph({
@@ -246,21 +283,40 @@ function M.toggle()
         }),
         n.columns(
           { size = 2 },
+          n.rows(
+          n.gap({ flex = 1 }),
+              n.paragraph({
+                lines = signal.search_info,
+                is_focusable = false,
+                padding = {
+                  left = 1,
+                  right = 1,
+                },
+              }),
+          n.gap({ flex = 1 })
+          ),
+          n.gap({ flex = 1 }),
           n.checkbox({
             label = "",
-            default_sign = "abc",
-            checked_sign = "AbC",
+            default_sign = " abc ",
+            checked_sign = " AbC ",
             border_style = "rounded",
+            is_focusable = false,
+            border_label = CAPITAL_KEY,
+            press_key = CAPITAL_KEY,
             value = signal.is_case_insensitive_checked,
             on_change = function(is_checked)
               signal.is_case_insensitive_checked = is_checked
             end,
           }),
           n.checkbox({
-            label = "Word",
+            label = " Word ",
             default_sign = "",
             checked_sign = "",
             border_style = "rounded",
+            is_focusable = false,
+            border_label = WORD_KEY,
+            press_key = WORD_KEY,
             value = signal.is_whole_word_checked,
             on_change = function(is_checked)
               signal.is_whole_word_checked = is_checked
@@ -276,7 +332,8 @@ function M.toggle()
           hidden = signal.search_results:map(function(value)
             return #value == 0
           end),
-        })
+        }),
+        n.gap({ flex = 1 })
       ),
         n.paragraph({
           lines = "Preview",

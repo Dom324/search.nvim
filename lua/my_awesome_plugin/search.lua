@@ -8,16 +8,23 @@ local spinner_formats = require("nui-components.utils.spinner-formats")
 local WORD_KEY = "<C-w>"
 local CAPITAL_KEY = "<C-a>"
 local HIDDEN_KEY = "<C-h>"
-local SEARCH_MODE_KEY = "<C-d>"
+local IGNORED_KEY = "<C-i>"
+local SEARCH_CWD_KEY = "<C-d>"
+local SEARCH_CMD_KEY = "<C-c>"
 
-local SEARCH_MODE_PROJECT_STR = "  Project "
-local SEARCH_MODE_GIT_STR = "    Git   "
-local SEARCH_MODE_GLOBAL_STR = "  Global  "
+local SEARCH_CWD_PROJECT_STR = "Project"
+local SEARCH_CWD_GLOBAL_STR = "Global "
 
-local SEARCH_MODE_PROJECT = 0
-local SEARCH_MODE_GIT = 1
-local SEARCH_MODE_GLOBAL = 2
+local SEARCH_CWD_PROJECT = 0
+local SEARCH_CWD_GLOBAL = 1
 
+local SEARCH_CMD_GLOB_STR = "Glob "
+local SEARCH_CMD_REGEX_STR = "Regex"
+local SEARCH_CMD_FUZZY_STR = "Fuzzy"
+
+local SEARCH_CMD_GLOB = 0
+local SEARCH_CMD_REGEX = 1
+local SEARCH_CMD_FUZZY = 2
 
 local M = {}
 
@@ -46,10 +53,13 @@ function M.toggle()
     exclude_paths = {},
     is_case_insensitive_checked = false,
     is_hidden_checked = false,
+    is_ignored_checked = false,
     is_whole_word_checked = false,
     search_info = "",
-    search_mode = SEARCH_MODE_PROJECT,
-    search_mode_str = SEARCH_MODE_PROJECT_STR,
+    search_cwd = SEARCH_CWD_PROJECT,
+    search_cwd_str = SEARCH_CWD_PROJECT_STR,
+    search_cmd = SEARCH_CMD_REGEX,
+    search_cmd_str = SEARCH_CMD_REGEX_STR,
     search_results = {},
     file_results = {},
     is_search_loading = false
@@ -160,6 +170,59 @@ function M.toggle()
     return line
   end
 
+  local function replace_handler(tree, node)
+    return {
+      on_done = function(result)
+        if result.ref then
+          node.ref = result.ref
+          tree:render()
+        end
+      end,
+      on_error = function(_) end,
+    }
+  end
+
+  local function mappings(search_query, replace_query)
+    local spectre_state_utils = require("spectre.state_utils")
+
+    return function(component)
+      return {
+        {
+          mode = { "n" },
+          key = "r",
+          handler = function()
+            local tree = component:get_tree()
+            local focused_node = component:get_focused_node()
+
+            if not focused_node then
+              return
+            end
+
+            local has_children = focused_node:has_children()
+
+            if not has_children then
+              local replacer_creator = spectre_state_utils.get_replace_creator()
+              local replacer =
+                replacer_creator:new(spectre_state_utils.get_replace_engine_config(), replace_handler(tree, focused_node))
+
+              local entry = focused_node.entry
+
+              replacer:replace({
+                lnum = entry.lnum,
+                col = entry.col,
+                cwd = vim.fn.getcwd(),
+                display_lnum = 0,
+                filename = entry.filename,
+                search_text = search_query:get_value(),
+                replace_text = replace_query:get_value(),
+              })
+            end
+          end,
+        },
+      }
+    end
+  end
+
   local function search_tree(props)
     return n.tree({
       border_style = "none",
@@ -170,7 +233,7 @@ function M.toggle()
       },
       hidden = props.hidden,
       data = props.data,
-      --mappings = mappings(props.search_query, props.replace_query),
+      mappings = mappings(props.search_query, props.replace_query),
       prepare_node = prepare_node,
       on_select = on_select(props.origin_winid),
     })
@@ -209,23 +272,41 @@ function M.toggle()
           { size = 2 },
           n.gap({ flex = 1 }),
           n.button({
-            label = signal.search_mode_str,
+            label = signal.search_cmd_str,
             is_focusable = false,
             border_style = "rounded",
-            border_label = "Search mode " .. SEARCH_MODE_KEY,
-            global_press_key = SEARCH_MODE_KEY,
+            border_label = SEARCH_CMD_KEY,
+            global_press_key = SEARCH_CMD_KEY,
             on_press = function()
                 -- Carousel option
-                local curr_search_mode = signal.search_mode:get_value()
-                if curr_search_mode == SEARCH_MODE_GIT then
-                    signal.search_mode = SEARCH_MODE_PROJECT
-                    signal.search_mode_str = SEARCH_MODE_PROJECT_STR
-                elseif curr_search_mode == SEARCH_MODE_PROJECT then
-                    signal.search_mode = SEARCH_MODE_GLOBAL
-                    signal.search_mode_str = SEARCH_MODE_GLOBAL_STR
+                local curr_search_cmd = signal.search_cmd:get_value()
+                if curr_search_cmd == SEARCH_CMD_GLOB then
+                    signal.search_cmd = SEARCH_CMD_REGEX
+                    signal.search_cmd_str = SEARCH_CMD_REGEX_STR
+                elseif curr_search_cmd == SEARCH_CMD_REGEX then
+                    signal.search_cmd = SEARCH_CMD_FUZZY
+                    signal.search_cmd_str = SEARCH_CMD_FUZZY_STR
                 else
-                    signal.search_mode = SEARCH_MODE_GIT
-                    signal.search_mode_str = SEARCH_MODE_GIT_STR
+                    signal.search_cmd = SEARCH_CMD_GLOB
+                    signal.search_cmd_str = SEARCH_CMD_GLOB_STR
+                end
+            end,
+          }),
+          n.button({
+            label = signal.search_cwd_str,
+            is_focusable = false,
+            border_style = "rounded",
+            border_label = SEARCH_CWD_KEY,
+            global_press_key = SEARCH_CWD_KEY,
+            on_press = function()
+                -- Carousel option
+                local curr_search_cwd = signal.search_cwd:get_value()
+                if curr_search_cwd == SEARCH_CWD_PROJECT then
+                    signal.search_cwd = SEARCH_CWD_GLOBAL
+                    signal.search_cwd_str = SEARCH_CWD_GLOBAL_STR
+                else
+                    signal.search_cwd = SEARCH_CWD_PROJECT
+                    signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
                 end
             end,
           }),
@@ -240,6 +321,19 @@ function M.toggle()
             press_key = HIDDEN_KEY,
             on_change = function(is_checked)
               signal.is_hidden_checked = is_checked
+            end,
+          }),
+          n.checkbox({
+            label = "Ignored",
+            default_sign = "",
+            checked_sign = "",
+            border_style = "rounded",
+            value = signal.is_ignored_checked,
+            is_focusable = false,
+            border_label = IGNORED_KEY,
+            press_key = IGNORED_KEY,
+            on_change = function(is_checked)
+              signal.is_ignored_checked = is_checked
             end,
           })
         ),

@@ -1,5 +1,5 @@
 local Job = require('plenary.job')
-local Tree = require("nui.tree")
+local n = require("nui-components")
 
 local M = {}
 
@@ -58,37 +58,30 @@ local M = {}
 --    end))
 --end
 
-
-function dump(o)
-   if type(o) == 'table' then
-      local s = '{ '
-      for k,v in pairs(o) do
-         if type(k) ~= 'number' then k = '"'..k..'"' end
-         s = s .. '\"' .. dump(v) .. '\",'
-      end
-      return s .. '} '
-   else
-      return tostring(o)
-   end
-end
-
-function M.process()
+function M.search(options, results_signal)
   --local res = vim.system({'git', 'rev-parse', '--is-bare-repository'}, { cwd = first_arg, text = true }):wait()
 
   --self.handler.on_start()
-          print("Hola")
-  local glob_str = "*.go"
-  local args = {'--json', 'hello', '-g', "**/result_test.go", '.'}
-  --local args = {'--files', '-g', glob_str, '.'}
+  glob_str = table.concat(options.search_paths, ',')
+  --local glob_str = "*.go"
+  --local args = {'--json', 'hello', '-g', glob_str, '.'}
+  local args = {'--files', '-g', glob_str, '.'}
 
+  results_signal.file_results = {}
+  local new_file_table = {}
   job = Job:new({
       enable_recording = false,
       command = 'rg',
       cwd = vim.fn.getcwd(),
       args = args,
       on_stdout = function(_, value)
-          print("stdout")
-          print(value)
+        pcall(vim.schedule_wrap(function()
+          table.insert(new_file_table, n.node({ text = value, is_marked = false}))
+        end))
+          --print(new_file_table[0].text)
+          --results_signal.file_results = n.node({ text = "docs/readme.lua", is_marked = false })
+          --print("stdout")
+          --print(value)
           --self:on_output(value)
       end,
       on_stderr = function(_, value)
@@ -99,6 +92,10 @@ function M.process()
       on_exit = function(_, value)
           print("exit")
           print(value)
+        pcall(vim.schedule_wrap(function()
+          results_signal.file_results = new_file_table
+        end))
+          --results_signal.file_results = new_file_table
           --self:on_exit(value)
       end,
   })

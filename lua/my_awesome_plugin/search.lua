@@ -21,19 +21,17 @@ local SEARCH_CWD_GLOBAL_STR = "Global "
 local SEARCH_CWD_PROJECT = 0
 local SEARCH_CWD_GLOBAL = 1
 
-local SEARCH_CMD_GLOB_STR = "Glob "
-local SEARCH_CMD_REGEX_STR = "Regex"
-local SEARCH_CMD_FUZZY_STR = "Fuzzy"
-
-local SEARCH_CMD_GLOB = 0
-local SEARCH_CMD_REGEX = 1
-local SEARCH_CMD_FUZZY = 2
+--local SEARCH_CMD_GLOB_STR = "Glob "
+--local SEARCH_CMD_REGEX_STR = "Regex"
+--local SEARCH_CMD_FUZZY_STR = "Fuzzy"
+--
+--local SEARCH_CMD_GLOB = 0
+--local SEARCH_CMD_REGEX = 1
+--local SEARCH_CMD_FUZZY = 2
 
 local M = {}
 
 function M.toggle()
-
-  file_search.process()
 
   local win_width = vim.api.nvim_win_get_width(0)
   local win_height = vim.api.nvim_win_get_height(0)
@@ -56,6 +54,13 @@ function M.toggle()
     replace_query = "",
     is_case_insensitive_checked = false,
     is_whole_word_checked = false,
+
+    search_paths = {},
+    exclude_paths = {},
+    is_hidden_checked = false,
+    is_ignored_checked = false,
+    search_cwd = SEARCH_CWD_PROJECT,
+    search_cwd_str = SEARCH_CWD_PROJECT_STR,
   })
 
   local search_results_signal = n.create_signal({
@@ -64,39 +69,41 @@ function M.toggle()
     search_info = "",
   })
 
-  local file_query_signal = n.create_signal({
-    search_paths = {},
-    exclude_paths = {},
-    is_hidden_checked = false,
-    is_ignored_checked = false,
-    search_cwd = SEARCH_CWD_PROJECT,
-    search_cwd_str = SEARCH_CWD_PROJECT_STR,
-    --search_cmd = SEARCH_CMD_REGEX,
-    --search_cmd_str = SEARCH_CMD_REGEX_STR,
-  })
-
   local file_results_signal = n.create_signal({
     is_file_search_loading = false,
     file_results = {
-            n.node({ text = "docs/readme.lua", is_marked = false }),
-            n.node({ text = "help.txt", is_marked = false }),
-            n.node({ text = "Essential API Documentation", is_marked = false }),
-            n.node({ text = "Bug Reporting Protocol", is_marked = false }),
-            n.node({ text = "Testing Strategy Overview", is_marked = true }),
-            n.node({ text = "Code Review Checklist", is_marked = false }),
-            n.node({ text = "Agile Sprint Planning Guide", is_marked = false }),
-            n.node({ text = "Deployment Process Documentation", is_marked = false }),
-            n.node({ text = "Continuous Integration Setup", is_marked = false }),
-            n.node({ text = "Security Protocol Documentation", is_marked = true }),
-          }
+      n.node({ text = "docs/readme.lua", is_marked = false }),
+      n.node({ text = "help.txt", is_marked = false }),
+      n.node({ text = "Essential API Documentation", is_marked = false }),
+      n.node({ text = "Bug Reporting Protocol", is_marked = false }),
+      n.node({ text = "Testing Strategy Overview", is_marked = true }),
+      n.node({ text = "Code Review Checklist", is_marked = false }),
+      n.node({ text = "Agile Sprint Planning Guide", is_marked = false }),
+      n.node({ text = "Deployment Process Documentation", is_marked = false }),
+      n.node({ text = "Continuous Integration Setup", is_marked = false }),
+      n.node({ text = "Security Protocol Documentation", is_marked = true }),
+    }
   })
 
   local subscription_search = query_signal:observe(function(prev, curr)
-    local diff = fn.isome({ "search_query", "is_case_insensitive_checked" }, function(key)
+    local diff_search = fn.isome({ "search_query", "replace_query", "is_case_insensitive_checked", "is_whole_word_checked" }, function(key)
+      return not vim.deep_equal(prev[key], curr[key])
+    end)
+    local diff_file = fn.isome({ "search_paths", "exclude_paths", "is_ignored_checked", "is_hidden_checked", "search_cwd" }, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
 
-    if diff then
+    if diff_file then
+      glob_str = table.concat(curr.search_paths, ',')
+      if #glob_str > 2 then
+        file_search.search(curr, file_results_signal)
+      --else
+      --  search_results_signal.search_info = ""
+      --  search_results_signal.search_results = {}
+      end
+    end
+
+    if diff_search or diff_file then
       if #curr.search_query > 2 then
         engine.search(curr, search_results_signal)
       else
@@ -108,25 +115,6 @@ function M.toggle()
     if not (prev.replace_query == curr.replace_query) and #curr.search_query > 2 then
       search_results_signal.search_results = engine.process(curr)
     end
-  end)
-
-  local subscription_files = file_query_signal:observe(function(prev, curr)
-    local diff = fn.isome({ "search_cwd", "search_cmd", "search_paths", "is_ignored_checked", "is_hidden_checked" }, function(key)
-      return not vim.deep_equal(prev[key], curr[key])
-    end)
-
-    --if diff then
-    --  if #curr.search_paths > 2 then
-    --    engine.search(curr, signal)
-    --  else
-    --    search_results_signal.search_info = ""
-    --    file_results_signal.file_results = {}
-    --  end
-    --end
-
-    --if not (prev.replace_query == curr.replace_query) and #curr.search_query > 2 then
-    --  search_results_signal.search_results = engine.process(curr)
-    --end
   end)
 
   local body = function()
@@ -141,11 +129,11 @@ function M.toggle()
           border_label = "Include files",
           autofocus = true,
           max_lines = 1,
-          value = file_query_signal.search_paths:map(function(paths)
+          value = query_signal.search_paths:map(function(paths)
             return table.concat(paths, ",")
           end),
           on_change = fn.debounce(function(value)
-            query_signal.file_search_paths = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
+            query_signal.search_paths = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
               return path == ""
             end)
           end, 400),
@@ -155,48 +143,48 @@ function M.toggle()
           autofocus = true,
           max_lines = 1,
           on_change = fn.debounce(function(value)
-            file_query_signal.exclude_paths = value
+            query_signal.exclude_paths = value
           end, 400),
         }),
         n.columns(
           { size = 2 },
           n.gap({ flex = 1 }),
           --n.button({
-          --  label =file_query_signal.search_cmd_str,
+          --  label =query_signal.search_cmd_str,
           --  is_focusable = false,
           --  border_style = "rounded",
           --  border_label = SEARCH_CMD_KEY,
           --  global_press_key = SEARCH_CMD_KEY,
           --  on_press = function()
           --      -- Carousel option
-          --      local curr_search_cmd =file_query_signal.search_cmd:get_value()
+          --      local curr_search_cmd = query_signal.search_cmd:get_value()
           --      if curr_search_cmd == SEARCH_CMD_GLOB then
-          --         file_query_signal.search_cmd = SEARCH_CMD_REGEX
-          --         file_query_signal.search_cmd_str = SEARCH_CMD_REGEX_STR
+          --         query_signal.search_cmd = SEARCH_CMD_REGEX
+          --         query_signal.search_cmd_str = SEARCH_CMD_REGEX_STR
           --      elseif curr_search_cmd == SEARCH_CMD_REGEX then
-          --         file_query_signal.search_cmd = SEARCH_CMD_FUZZY
-          --         file_query_signal.search_cmd_str = SEARCH_CMD_FUZZY_STR
+          --         query_signal.search_cmd = SEARCH_CMD_FUZZY
+          --         query_signal.search_cmd_str = SEARCH_CMD_FUZZY_STR
           --      else
-          --         file_query_signal.search_cmd = SEARCH_CMD_GLOB
-          --         file_query_signal.search_cmd_str = SEARCH_CMD_GLOB_STR
+          --         query_signal.search_cmd = SEARCH_CMD_GLOB
+          --         query_signal.search_cmd_str = SEARCH_CMD_GLOB_STR
           --      end
           --  end,
           --}),
           n.button({
-            label =file_query_signal.search_cwd_str,
+            label =query_signal.search_cwd_str,
             is_focusable = false,
             border_style = "rounded",
             border_label = SEARCH_CWD_KEY,
             global_press_key = SEARCH_CWD_KEY,
             on_press = function()
                 -- Carousel option
-                local curr_search_cwd =file_query_signal.search_cwd:get_value()
+                local curr_search_cwd =query_signal.search_cwd:get_value()
                 if curr_search_cwd == SEARCH_CWD_PROJECT then
-                   file_query_signal.search_cwd = SEARCH_CWD_GLOBAL
-                   file_query_signal.search_cwd_str = SEARCH_CWD_GLOBAL_STR
+                   query_signal.search_cwd = SEARCH_CWD_GLOBAL
+                   query_signal.search_cwd_str = SEARCH_CWD_GLOBAL_STR
                 else
-                   file_query_signal.search_cwd = SEARCH_CWD_PROJECT
-                   file_query_signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
+                   query_signal.search_cwd = SEARCH_CWD_PROJECT
+                   query_signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
                 end
             end,
           }),
@@ -205,12 +193,12 @@ function M.toggle()
             default_sign = "",
             checked_sign = "",
             border_style = "rounded",
-            value =file_query_signal.is_hidden_checked,
+            value =query_signal.is_hidden_checked,
             is_focusable = false,
             border_label = HIDDEN_KEY,
             press_key = HIDDEN_KEY,
             on_change = function(is_checked)
-             file_query_signal.is_hidden_checked = is_checked
+             query_signal.is_hidden_checked = is_checked
             end,
           }),
           n.checkbox({
@@ -218,12 +206,12 @@ function M.toggle()
             default_sign = "",
             checked_sign = "",
             border_style = "rounded",
-            value =file_query_signal.is_ignored_checked,
+            value =query_signal.is_ignored_checked,
             is_focusable = false,
             border_label = IGNORED_KEY,
             press_key = IGNORED_KEY,
             on_change = function(is_checked)
-             file_query_signal.is_ignored_checked = is_checked
+             query_signal.is_ignored_checked = is_checked
             end,
           })
         ),

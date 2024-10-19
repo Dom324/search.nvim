@@ -51,22 +51,31 @@ function M.toggle()
     },
   })
 
-  local signal = n.create_signal({
+  local query_signal = n.create_signal({
     search_query = "",
     replace_query = "",
-    search_paths = {},
-    exclude_paths = {},
     is_case_insensitive_checked = false,
-    is_hidden_checked = false,
-    is_ignored_checked = false,
     is_whole_word_checked = false,
-    search_info = "",
-    search_cwd = SEARCH_CWD_PROJECT,
-    search_cwd_str = SEARCH_CWD_PROJECT_STR,
-    search_cmd = SEARCH_CMD_REGEX,
-    search_cmd_str = SEARCH_CMD_REGEX_STR,
+  })
+
+  local search_results_signal = n.create_signal({
     search_results = {},
     is_search_loading = false,
+    search_info = "",
+  })
+
+  local file_query_signal = n.create_signal({
+    search_paths = {},
+    exclude_paths = {},
+    is_hidden_checked = false,
+    is_ignored_checked = false,
+    search_cwd = SEARCH_CWD_PROJECT,
+    search_cwd_str = SEARCH_CWD_PROJECT_STR,
+    --search_cmd = SEARCH_CMD_REGEX,
+    --search_cmd_str = SEARCH_CMD_REGEX_STR,
+  })
+
+  local file_results_signal = n.create_signal({
     is_file_search_loading = false,
     file_results = {
             n.node({ text = "docs/readme.lua", is_marked = false }),
@@ -80,45 +89,44 @@ function M.toggle()
             n.node({ text = "Continuous Integration Setup", is_marked = false }),
             n.node({ text = "Security Protocol Documentation", is_marked = true }),
           }
-
   })
 
-  local subscription_search = signal:observe(function(prev, curr)
-    local diff = fn.isome({ "search_query", "is_case_insensitive_checked", "search_paths" }, function(key)
+  local subscription_search = query_signal:observe(function(prev, curr)
+    local diff = fn.isome({ "search_query", "is_case_insensitive_checked" }, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
 
     if diff then
       if #curr.search_query > 2 then
-        engine.search(curr, signal)
+        engine.search(curr, search_results_signal)
       else
-        signal.search_info = ""
-        signal.search_results = {}
+        search_results_signal.search_info = ""
+        search_results_signal.search_results = {}
       end
     end
 
     if not (prev.replace_query == curr.replace_query) and #curr.search_query > 2 then
-      signal.search_results = engine.process(curr)
+      search_results_signal.search_results = engine.process(curr)
     end
   end)
 
-  local subscription_files = signal:observe(function(prev, curr)
+  local subscription_files = file_query_signal:observe(function(prev, curr)
     local diff = fn.isome({ "search_cwd", "search_cmd", "search_paths", "is_ignored_checked", "is_hidden_checked" }, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
 
-    if diff then
-      if #curr.search_paths > 2 then
-        engine.search(curr, signal)
-      else
-        signal.search_info = ""
-        signal.file_results = {}
-      end
-    end
+    --if diff then
+    --  if #curr.search_paths > 2 then
+    --    engine.search(curr, signal)
+    --  else
+    --    search_results_signal.search_info = ""
+    --    file_results_signal.file_results = {}
+    --  end
+    --end
 
-    if not (prev.replace_query == curr.replace_query) and #curr.search_query > 2 then
-      signal.search_results = engine.process(curr)
-    end
+    --if not (prev.replace_query == curr.replace_query) and #curr.search_query > 2 then
+    --  search_results_signal.search_results = engine.process(curr)
+    --end
   end)
 
   local body = function()
@@ -133,11 +141,11 @@ function M.toggle()
           border_label = "Include files",
           autofocus = true,
           max_lines = 1,
-          value = signal.search_paths:map(function(paths)
+          value = file_query_signal.search_paths:map(function(paths)
             return table.concat(paths, ",")
           end),
           on_change = fn.debounce(function(value)
-            signal.search_paths = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
+            query_signal.file_search_paths = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
               return path == ""
             end)
           end, 400),
@@ -147,48 +155,48 @@ function M.toggle()
           autofocus = true,
           max_lines = 1,
           on_change = fn.debounce(function(value)
-            signal.exclude_paths = value
+            file_query_signal.exclude_paths = value
           end, 400),
         }),
         n.columns(
           { size = 2 },
           n.gap({ flex = 1 }),
+          --n.button({
+          --  label =file_query_signal.search_cmd_str,
+          --  is_focusable = false,
+          --  border_style = "rounded",
+          --  border_label = SEARCH_CMD_KEY,
+          --  global_press_key = SEARCH_CMD_KEY,
+          --  on_press = function()
+          --      -- Carousel option
+          --      local curr_search_cmd =file_query_signal.search_cmd:get_value()
+          --      if curr_search_cmd == SEARCH_CMD_GLOB then
+          --         file_query_signal.search_cmd = SEARCH_CMD_REGEX
+          --         file_query_signal.search_cmd_str = SEARCH_CMD_REGEX_STR
+          --      elseif curr_search_cmd == SEARCH_CMD_REGEX then
+          --         file_query_signal.search_cmd = SEARCH_CMD_FUZZY
+          --         file_query_signal.search_cmd_str = SEARCH_CMD_FUZZY_STR
+          --      else
+          --         file_query_signal.search_cmd = SEARCH_CMD_GLOB
+          --         file_query_signal.search_cmd_str = SEARCH_CMD_GLOB_STR
+          --      end
+          --  end,
+          --}),
           n.button({
-            label = signal.search_cmd_str,
-            is_focusable = false,
-            border_style = "rounded",
-            border_label = SEARCH_CMD_KEY,
-            global_press_key = SEARCH_CMD_KEY,
-            on_press = function()
-                -- Carousel option
-                local curr_search_cmd = signal.search_cmd:get_value()
-                if curr_search_cmd == SEARCH_CMD_GLOB then
-                    signal.search_cmd = SEARCH_CMD_REGEX
-                    signal.search_cmd_str = SEARCH_CMD_REGEX_STR
-                elseif curr_search_cmd == SEARCH_CMD_REGEX then
-                    signal.search_cmd = SEARCH_CMD_FUZZY
-                    signal.search_cmd_str = SEARCH_CMD_FUZZY_STR
-                else
-                    signal.search_cmd = SEARCH_CMD_GLOB
-                    signal.search_cmd_str = SEARCH_CMD_GLOB_STR
-                end
-            end,
-          }),
-          n.button({
-            label = signal.search_cwd_str,
+            label =file_query_signal.search_cwd_str,
             is_focusable = false,
             border_style = "rounded",
             border_label = SEARCH_CWD_KEY,
             global_press_key = SEARCH_CWD_KEY,
             on_press = function()
                 -- Carousel option
-                local curr_search_cwd = signal.search_cwd:get_value()
+                local curr_search_cwd =file_query_signal.search_cwd:get_value()
                 if curr_search_cwd == SEARCH_CWD_PROJECT then
-                    signal.search_cwd = SEARCH_CWD_GLOBAL
-                    signal.search_cwd_str = SEARCH_CWD_GLOBAL_STR
+                   file_query_signal.search_cwd = SEARCH_CWD_GLOBAL
+                   file_query_signal.search_cwd_str = SEARCH_CWD_GLOBAL_STR
                 else
-                    signal.search_cwd = SEARCH_CWD_PROJECT
-                    signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
+                   file_query_signal.search_cwd = SEARCH_CWD_PROJECT
+                   file_query_signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
                 end
             end,
           }),
@@ -197,12 +205,12 @@ function M.toggle()
             default_sign = "",
             checked_sign = "",
             border_style = "rounded",
-            value = signal.is_hidden_checked,
+            value =file_query_signal.is_hidden_checked,
             is_focusable = false,
             border_label = HIDDEN_KEY,
             press_key = HIDDEN_KEY,
             on_change = function(is_checked)
-              signal.is_hidden_checked = is_checked
+             file_query_signal.is_hidden_checked = is_checked
             end,
           }),
           n.checkbox({
@@ -210,22 +218,22 @@ function M.toggle()
             default_sign = "",
             checked_sign = "",
             border_style = "rounded",
-            value = signal.is_ignored_checked,
+            value =file_query_signal.is_ignored_checked,
             is_focusable = false,
             border_label = IGNORED_KEY,
             press_key = IGNORED_KEY,
             on_change = function(is_checked)
-              signal.is_ignored_checked = is_checked
+             file_query_signal.is_ignored_checked = is_checked
             end,
           })
         ),
         n.gap(1),
         file_tree({
-          search_query = signal.search_query,
-          replace_query = signal.replace_query,
-          data = signal.file_results,
+          search_query = query_signal.search_query,
+          replace_query = query_signal.replace_query,
+          data = file_results_signal.file_results,
           --origin_winid = renderer:get_origin_winid(),
-          hidden = signal.file_results:map(function(value)
+          hidden = file_results_signal.file_results:map(function(value)
             return #value == 0
           end),
         }),
@@ -245,14 +253,14 @@ function M.toggle()
             max_lines = 1,
             flex = 1,
             on_change = fn.debounce(function(value)
-              signal.search_query = value
+              query_signal.search_query = value
             end, 400),
           }),
           n.rows(
           { size = 2 },
             n.gap(1),
             n.spinner({
-              is_loading = signal.is_search_loading,
+              is_loading = search_results_signal.is_search_loading,
               frames = spinner_formats.dots_9,
             })
           )
@@ -263,7 +271,7 @@ function M.toggle()
           autofocus = true,
           max_lines = 1,
           on_change = fn.debounce(function(value)
-            signal.replace_query = value
+            query_signal.replace_query = value
           end, 400),
         }),
         n.columns(
@@ -271,7 +279,7 @@ function M.toggle()
           n.rows(
           n.gap({ flex = 1 }),
               n.paragraph({
-                lines = signal.search_info,
+                lines = search_results_signal.search_info,
                 is_focusable = false,
                 padding = {
                   left = 1,
@@ -289,9 +297,9 @@ function M.toggle()
             is_focusable = false,
             border_label = CAPITAL_KEY,
             press_key = CAPITAL_KEY,
-            value = signal.is_case_insensitive_checked,
+            value = query_signal.is_case_insensitive_checked,
             on_change = function(is_checked)
-              signal.is_case_insensitive_checked = is_checked
+              query_signal.is_case_insensitive_checked = is_checked
             end,
           }),
           n.checkbox({
@@ -302,19 +310,19 @@ function M.toggle()
             is_focusable = false,
             border_label = WORD_KEY,
             press_key = WORD_KEY,
-            value = signal.is_whole_word_checked,
+            value = query_signal.is_whole_word_checked,
             on_change = function(is_checked)
-              signal.is_whole_word_checked = is_checked
+              query_signal.is_whole_word_checked = is_checked
             end,
           })
         ),
         n.gap(1),
         search_tree({
-          search_query = signal.search_query,
-          replace_query = signal.replace_query,
-          data = signal.search_results,
+          search_query = query_signal.search_query,
+          replace_query = query_signal.replace_query,
+          data = search_results_signal.search_results,
           origin_winid = renderer:get_origin_winid(),
-          hidden = signal.search_results:map(function(value)
+          hidden = search_results_signal.search_results:map(function(value)
             return #value == 0
           end),
         }),

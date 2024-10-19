@@ -2,6 +2,8 @@ local engine = require("my_awesome_plugin.engine")
 require("my_awesome_plugin.highlight")
 local fn = require("my_awesome_plugin.fn")
 local search_tree = require("my_awesome_plugin.search_tree")
+local file_tree = require("my_awesome_plugin.file_tree")
+local file_search = require("my_awesome_plugin.file_search")
 
 local n = require("nui-components")
 local spinner_formats = require("nui-components.utils.spinner-formats")
@@ -30,6 +32,8 @@ local SEARCH_CMD_FUZZY = 2
 local M = {}
 
 function M.toggle()
+
+  file_search.process()
 
   local win_width = vim.api.nvim_win_get_width(0)
   local win_height = vim.api.nvim_win_get_height(0)
@@ -62,11 +66,24 @@ function M.toggle()
     search_cmd = SEARCH_CMD_REGEX,
     search_cmd_str = SEARCH_CMD_REGEX_STR,
     search_results = {},
-    file_results = {},
-    is_search_loading = false
+    is_search_loading = false,
+    is_file_search_loading = false,
+    file_results = {
+            n.node({ text = "docs/readme.lua", is_marked = false }),
+            n.node({ text = "help.txt", is_marked = false }),
+            n.node({ text = "Essential API Documentation", is_marked = false }),
+            n.node({ text = "Bug Reporting Protocol", is_marked = false }),
+            n.node({ text = "Testing Strategy Overview", is_marked = true }),
+            n.node({ text = "Code Review Checklist", is_marked = false }),
+            n.node({ text = "Agile Sprint Planning Guide", is_marked = false }),
+            n.node({ text = "Deployment Process Documentation", is_marked = false }),
+            n.node({ text = "Continuous Integration Setup", is_marked = false }),
+            n.node({ text = "Security Protocol Documentation", is_marked = true }),
+          }
+
   })
 
-  local subscription = signal:observe(function(prev, curr)
+  local subscription_search = signal:observe(function(prev, curr)
     local diff = fn.isome({ "search_query", "is_case_insensitive_checked", "search_paths" }, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
@@ -77,6 +94,25 @@ function M.toggle()
       else
         signal.search_info = ""
         signal.search_results = {}
+      end
+    end
+
+    if not (prev.replace_query == curr.replace_query) and #curr.search_query > 2 then
+      signal.search_results = engine.process(curr)
+    end
+  end)
+
+  local subscription_files = signal:observe(function(prev, curr)
+    local diff = fn.isome({ "search_cwd", "search_cmd", "search_paths", "is_ignored_checked", "is_hidden_checked" }, function(key)
+      return not vim.deep_equal(prev[key], curr[key])
+    end)
+
+    if diff then
+      if #curr.search_paths > 2 then
+        engine.search(curr, signal)
+      else
+        signal.search_info = ""
+        signal.file_results = {}
       end
     end
 
@@ -184,7 +220,16 @@ function M.toggle()
           })
         ),
         n.gap(1),
-        n.gap({ flex = 1 })
+        file_tree({
+          search_query = signal.search_query,
+          replace_query = signal.replace_query,
+          data = signal.file_results,
+          --origin_winid = renderer:get_origin_winid(),
+          hidden = signal.file_results:map(function(value)
+            return #value == 0
+          end),
+        }),
+        n.gap({ flex = 1 })     -- TODO: is needed?
       ),
       n.rows(
         n.paragraph({

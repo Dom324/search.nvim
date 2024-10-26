@@ -133,7 +133,9 @@ function M.toggle()
           autofocus = true,
           max_lines = 1,
           on_change = fn.debounce(function(value)
-            query_signal.exclude_paths = value
+            query_signal.exclude_paths = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
+              return path == ""
+            end)
           end, 400),
         }),
         n.columns(

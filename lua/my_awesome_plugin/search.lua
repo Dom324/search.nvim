@@ -115,19 +115,32 @@ function M.toggle()
           align = "center",
           is_focusable = false,
         }),
-        n.text_input({
-          border_label = "Include files",
-          autofocus = true,
-          max_lines = 1,
-          value = query_signal.search_paths:map(function(paths)
-            return table.concat(paths, ",")
-          end),
-          on_change = fn.debounce(function(value)
-            query_signal.search_paths = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
-              return path == ""
-            end)
-          end, 400),
-        }),
+        n.columns(
+          { size = 2 },
+          n.text_input({
+            border_label = "Include files",
+            autofocus = true,
+            max_lines = 1,
+            flex = 1,
+            value = query_signal.search_paths:map(function(paths)
+              return table.concat(paths, ",")
+            end),
+            on_change = fn.debounce(function(value)
+              query_signal.search_paths = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
+                return path == ""
+              end)
+            end, 400),
+          }),
+          n.rows(
+          { size = 2 },
+            n.gap(1),
+            n.spinner({
+              is_loading = file_results_signal.is_file_search_loading,
+              frames = spinner_formats.dots_9,
+            })
+          )
+        ),
+        n.gap(1),
         n.text_input({
           border_label = "Exclude files",
           autofocus = true,

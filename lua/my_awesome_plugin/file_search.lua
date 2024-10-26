@@ -86,6 +86,7 @@ function M.search(options, input_signal, results_signal)
   --print(args_str)
 
   results_signal.file_results = {}
+  results_signal.is_file_search_loading = true
   local new_file_table = {}
   job = Job:new({
       enable_recording = false,
@@ -112,6 +113,7 @@ function M.search(options, input_signal, results_signal)
           print(value)
         pcall(vim.schedule_wrap(function()
           results_signal.file_results = new_file_table
+          results_signal.is_file_search_loading = false
         end))
           --results_signal.file_results = new_file_table
           --self:on_exit(value)

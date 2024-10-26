@@ -1,4 +1,5 @@
 local engine = require("my_awesome_plugin.engine")
+local options = require("my_awesome_plugin.config").options
 require("my_awesome_plugin.highlight")
 local fn = require("my_awesome_plugin.fn")
 local search_tree = require("my_awesome_plugin.search_tree")
@@ -71,18 +72,7 @@ function M.toggle()
 
   local file_results_signal = n.create_signal({
     is_file_search_loading = false,
-    file_results = {
-      n.node({ text = "docs/readme.lua", is_marked = false }),
-      n.node({ text = "help.txt", is_marked = false }),
-      n.node({ text = "Essential API Documentation", is_marked = false }),
-      n.node({ text = "Bug Reporting Protocol", is_marked = false }),
-      n.node({ text = "Testing Strategy Overview", is_marked = true }),
-      n.node({ text = "Code Review Checklist", is_marked = false }),
-      n.node({ text = "Agile Sprint Planning Guide", is_marked = false }),
-      n.node({ text = "Deployment Process Documentation", is_marked = false }),
-      n.node({ text = "Continuous Integration Setup", is_marked = false }),
-      n.node({ text = "Security Protocol Documentation", is_marked = true }),
-    }
+    file_results = {}
   })
 
   local subscription_search = query_signal:observe(function(prev, curr)
@@ -96,7 +86,7 @@ function M.toggle()
     if diff_file then
       glob_str = table.concat(curr.search_paths, ',')
       if #glob_str > 2 then
-        file_search.search(curr, file_results_signal)
+        file_search.search(options, curr, file_results_signal)
       --else
       --  search_results_signal.search_info = ""
       --  search_results_signal.search_results = {}

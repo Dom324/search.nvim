@@ -84,6 +84,7 @@ function M.search(options, input_signal, results_signal)
       glob_prefix = '!' .. glob_prefix
     end
     table.insert(expanded_globs, glob_prefix .. glob .. options.file_glob_postfix)
+    table.insert(expanded_globs, glob_prefix .. glob .. options.file_glob_postfix2)
   end
 
   --local glob_str = "*.go"

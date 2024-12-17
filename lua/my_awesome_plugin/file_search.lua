@@ -86,16 +86,12 @@ function M.search(options, input_signal, results_signal)
     table.insert(expanded_include_globs, glob_prefix .. glob .. options.file_glob_postfix)
   end
 
-  local expanded_exclude_globs = {}
-  for _, glob in ipairs(input_signal.exclude_paths) do table.insert(expanded_exclude_globs, '!' .. glob_prefix .. glob .. options.file_glob_postfix) end
-
   --local glob_str = "*.go"
   --local args = {'--json', 'hello', '-g', glob_str, search_path}
   local args = {}
   table.insert(args, '--hidden')
   table.insert(args, '--files')
   for _, glob in ipairs(expanded_include_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
-  for _, glob in ipairs(expanded_exclude_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
   table.insert(args, search_path)
 
   args_str = table.concat(args, ' ')

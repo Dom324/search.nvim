@@ -57,7 +57,6 @@ function M.toggle()
     is_whole_word_checked = false,
 
     search_paths = {},
-    exclude_paths = {},
     is_hidden_checked = false,
     is_ignored_checked = false,
     search_cwd = SEARCH_CWD_PROJECT,
@@ -80,7 +79,7 @@ function M.toggle()
     local diff_search = fn.isome({ "search_query", "replace_query", "is_case_insensitive_checked", "is_whole_word_checked" }, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
-    local diff_file = fn.isome({ "search_paths", "exclude_paths", "is_ignored_checked", "is_hidden_checked", "search_cwd" }, function(key)
+    local diff_file = fn.isome({ "search_paths", "is_ignored_checked", "is_hidden_checked", "search_cwd" }, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
 
@@ -142,16 +141,6 @@ function M.toggle()
           )
         ),
         n.gap(1),
-        n.text_input({
-          border_label = "Exclude files",
-          autofocus = true,
-          max_lines = 1,
-          on_change = fn.debounce(function(value)
-            query_signal.exclude_paths = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
-              return path == ""
-            end)
-          end, 400),
-        }),
         n.columns(
           { size = 2 },
           n.rows(

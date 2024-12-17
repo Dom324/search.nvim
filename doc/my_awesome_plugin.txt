@@ -28,6 +28,8 @@ my_awesome_plugin.setup({options})                 *my_awesome_plugin.setup()*
 
     Defaults: ~
     {
+      file_glob_postfix = "/**",
+      file_glob_prefix = "**/",
       round = true
     }
 

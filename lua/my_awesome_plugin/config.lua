@@ -5,8 +5,8 @@ local M = {}
 
 M.defaults = {
   round = true,
-  file_glob_prefix = "",
-  file_glob_postfix = "**",
+  file_glob_prefix = "**/",
+  file_glob_postfix = "/**",
 }
 
 ---@class Config

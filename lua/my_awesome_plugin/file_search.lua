@@ -74,9 +74,17 @@ function M.search(options, input_signal, results_signal)
     glob_prefix = os.getenv( "HOME" ) .. '/' .. options.file_glob_prefix
   end
 
+
   -- Prepend every path with prefix and postfix
   local expanded_include_globs = {}
-  for _, glob in ipairs(input_signal.search_paths) do table.insert(expanded_include_globs, glob_prefix .. glob .. options.file_glob_postfix) end
+  for _, glob in ipairs(input_signal.search_paths) do
+    -- Handle strings starting with !
+    if string.sub(glob, 1, 1) == "!" then
+      glob = string.sub(glob, 2)
+      glob_prefix = '!' .. glob_prefix
+    end
+    table.insert(expanded_include_globs, glob_prefix .. glob .. options.file_glob_postfix)
+  end
 
   local expanded_exclude_globs = {}
   for _, glob in ipairs(input_signal.exclude_paths) do table.insert(expanded_exclude_globs, '!' .. glob_prefix .. glob .. options.file_glob_postfix) end

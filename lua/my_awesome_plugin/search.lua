@@ -72,7 +72,8 @@ function M.toggle()
 
   local file_results_signal = n.create_signal({
     is_file_search_loading = false,
-    file_results = {}
+    file_results = {},
+    search_info = ""
   })
 
   local subscription_search = query_signal:observe(function(prev, curr)
@@ -87,9 +88,9 @@ function M.toggle()
       glob_str = table.concat(curr.search_paths, ',')
       if #glob_str > 2 then
         file_search.search(options, curr, file_results_signal)
-      --else
-      --  search_results_signal.search_info = ""
-      --  search_results_signal.search_results = {}
+      else
+        file_results_signal.file_results = {}
+        file_results_signal.search_info = ""
       end
     end
 
@@ -153,6 +154,18 @@ function M.toggle()
         }),
         n.columns(
           { size = 2 },
+          n.rows(
+            n.gap({ flex = 1 }),
+            n.paragraph({
+              lines = file_results_signal.search_info,
+              is_focusable = false,
+              padding = {
+                left = 1,
+                right = 1,
+              },
+            }),
+            n.gap({ flex = 1 })
+          ),
           n.gap({ flex = 1 }),
           --n.button({
           --  label =query_signal.search_cmd_str,
@@ -270,16 +283,16 @@ function M.toggle()
         n.columns(
           { size = 2 },
           n.rows(
-          n.gap({ flex = 1 }),
-              n.paragraph({
-                lines = search_results_signal.search_info,
-                is_focusable = false,
-                padding = {
-                  left = 1,
-                  right = 1,
-                },
-              }),
-          n.gap({ flex = 1 })
+            n.gap({ flex = 1 }),
+            n.paragraph({
+              lines = search_results_signal.search_info,
+              is_focusable = false,
+              padding = {
+                left = 1,
+                right = 1,
+              },
+            }),
+            n.gap({ flex = 1 })
           ),
           n.gap({ flex = 1 }),
           n.checkbox({

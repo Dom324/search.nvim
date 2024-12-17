@@ -61,33 +61,44 @@ local SEARCH_CWD_PROJECT = 0
 --end
 
 function M.search(options, input_signal, results_signal)
-  --local res = vim.system({'git', 'rev-parse', '--is-bare-repository'}, { cwd = first_arg, text = true }):wait()
 
   --self.handler.on_start()
+  M.stop(results_signal)
+  local start_time = vim.loop.hrtime()
 
-  search_path = (input_signal.search_cwd == SEARCH_CWD_PROJECT) and '.' or os.getenv( "HOME" )
+  if input_signal.search_cwd == SEARCH_CWD_PROJECT then
+    search_path = '.'
+    glob_prefix = options.file_glob_prefix
+  else
+    search_path = os.getenv( "HOME" )
+    glob_prefix = os.getenv( "HOME" ) .. '/' .. options.file_glob_prefix
+  end
 
-  -- Prepedn every path with prefix and postfix
+  -- Prepend every path with prefix and postfix
   local expanded_include_globs = {}
-  for _, glob in ipairs(input_signal.search_paths) do table.insert(expanded_include_globs, options.file_glob_prefix .. glob .. options.file_glob_postfix) end
+  for _, glob in ipairs(input_signal.search_paths) do table.insert(expanded_include_globs, glob_prefix .. glob .. options.file_glob_postfix) end
 
   local expanded_exclude_globs = {}
-  for _, glob in ipairs(input_signal.exclude_paths) do table.insert(expanded_exclude_globs, '!' .. options.file_glob_prefix .. glob .. options.file_glob_postfix) end
+  for _, glob in ipairs(input_signal.exclude_paths) do table.insert(expanded_exclude_globs, '!' .. glob_prefix .. glob .. options.file_glob_postfix) end
 
   --local glob_str = "*.go"
   --local args = {'--json', 'hello', '-g', glob_str, search_path}
   local args = {}
+  table.insert(args, '--hidden')
   table.insert(args, '--files')
   for _, glob in ipairs(expanded_include_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
   for _, glob in ipairs(expanded_exclude_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
   table.insert(args, search_path)
 
-  --args_str = table.concat(args, ' ')
-  --print(args_str)
+  args_str = table.concat(args, ' ')
+  print(args_str)
 
   results_signal.file_results = {}
   results_signal.is_file_search_loading = true
+
   local new_file_table = {}
+  local num_files_found = 0
+
   job = Job:new({
       enable_recording = false,
       command = 'rg',
@@ -96,6 +107,10 @@ function M.search(options, input_signal, results_signal)
       on_stdout = function(_, value)
         pcall(vim.schedule_wrap(function()
           table.insert(new_file_table, n.node({ text = value, is_marked = false}))
+          num_files_found = num_files_found + 1
+          --if num_files_found == 1 then
+          --  results_signal.file_results = new_file_table
+          --end
         end))
           --print(new_file_table[0].text)
           --results_signal.file_results = n.node({ text = "docs/readme.lua", is_marked = false })
@@ -114,6 +129,11 @@ function M.search(options, input_signal, results_signal)
         pcall(vim.schedule_wrap(function()
           results_signal.file_results = new_file_table
           results_signal.is_file_search_loading = false
+          local end_time = (vim.loop.hrtime() - start_time) / 1E9
+          local total = num_files_found
+          results_signal.search_info = string.format("Total: %s match, time: %ss", total, end_time)
+          print(end_time)
+          print(num_files_found)
         end))
           --results_signal.file_results = new_file_table
           --self:on_exit(value)
@@ -121,6 +141,15 @@ function M.search(options, input_signal, results_signal)
   })
 
   job:start()
+end
+
+function M.stop(results_signal)
+  print("stop")
+  if results_signal.is_file_search_loading == true then
+      print("shutting down")
+      job:shutdown()
+      results_signal.is_file_search_loading = false
+  end
 end
 
 --function M.process(options)

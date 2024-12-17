@@ -56,7 +56,7 @@ function M.toggle()
     is_case_insensitive_checked = false,
     is_whole_word_checked = false,
 
-    search_paths = {},
+    globs = {},
     is_hidden_checked = false,
     is_ignored_checked = false,
     search_cwd = SEARCH_CWD_PROJECT,
@@ -79,12 +79,12 @@ function M.toggle()
     local diff_search = fn.isome({ "search_query", "replace_query", "is_case_insensitive_checked", "is_whole_word_checked" }, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
-    local diff_file = fn.isome({ "search_paths", "is_ignored_checked", "is_hidden_checked", "search_cwd" }, function(key)
+    local diff_file = fn.isome({ "globs", "is_ignored_checked", "is_hidden_checked", "search_cwd" }, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
 
     if diff_file then
-      glob_str = table.concat(curr.search_paths, ',')
+      glob_str = table.concat(curr.globs, ',')
       if #glob_str > 2 then
         file_search.search(options, curr, file_results_signal)
       else
@@ -118,15 +118,15 @@ function M.toggle()
         n.columns(
           { size = 2 },
           n.text_input({
-            border_label = "Include files",
+            border_label = "File glob",
             autofocus = true,
             max_lines = 1,
             flex = 1,
-            value = query_signal.search_paths:map(function(paths)
+            value = query_signal.globs:map(function(paths)
               return table.concat(paths, ",")
             end),
             on_change = fn.debounce(function(value)
-              query_signal.search_paths = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
+              query_signal.globs = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
                 return path == ""
               end)
             end, 400),

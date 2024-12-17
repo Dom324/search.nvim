@@ -76,14 +76,14 @@ function M.search(options, input_signal, results_signal)
 
 
   -- Prepend every path with prefix and postfix
-  local expanded_include_globs = {}
-  for _, glob in ipairs(input_signal.search_paths) do
+  local expanded_globs = {}
+  for _, glob in ipairs(input_signal.globs) do
     -- Handle strings starting with !
     if string.sub(glob, 1, 1) == "!" then
       glob = string.sub(glob, 2)
       glob_prefix = '!' .. glob_prefix
     end
-    table.insert(expanded_include_globs, glob_prefix .. glob .. options.file_glob_postfix)
+    table.insert(expanded_globs, glob_prefix .. glob .. options.file_glob_postfix)
   end
 
   --local glob_str = "*.go"
@@ -91,7 +91,7 @@ function M.search(options, input_signal, results_signal)
   local args = {}
   table.insert(args, '--hidden')
   table.insert(args, '--files')
-  for _, glob in ipairs(expanded_include_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
+  for _, glob in ipairs(expanded_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
   table.insert(args, search_path)
 
   args_str = table.concat(args, ' ')

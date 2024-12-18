@@ -68,23 +68,32 @@ function M.search(options, input_signal, results_signal)
 
   if input_signal.search_cwd == SEARCH_CWD_PROJECT then
     search_path = '.'
-    glob_prefix = options.file_glob_prefix
+    -- glob_prefix = options.file_glob_prefix
   else
     search_path = os.getenv( "HOME" )
-    glob_prefix = os.getenv( "HOME" ) .. '/' .. options.file_glob_prefix
+    -- glob_prefix = os.getenv( "HOME" ) .. '/' .. options.file_glob_prefix
   end
-
 
   -- Prepend every path with prefix and postfix
   local expanded_globs = {}
   for _, glob in ipairs(input_signal.globs) do
-    -- Handle strings starting with !
-    if string.sub(glob, 1, 1) == "!" then
-      glob = string.sub(glob, 2)
-      glob_prefix = '!' .. glob_prefix
+    for _,glob_pre_post_fix in ipairs(options.glob_pre_post_fixes) do
+      glob_prefix = glob_pre_post_fix[1]
+      glob_postfix = glob_pre_post_fix[2]
+      print(glob_prefix)
+      print(glob_postfix)
+
+      local first_char = string.sub(glob, 1, 1)
+      local glob_negated = first_char == "!"
+      if glob_negated then
+        glob = string.sub(glob, 2)
+        negate_char = '!'
+      else
+        negate_char = ''
+      end
+
+      table.insert(expanded_globs, negate_char .. glob_prefix .. glob .. glob_postfix)
     end
-    table.insert(expanded_globs, glob_prefix .. glob .. options.file_glob_postfix)
-    table.insert(expanded_globs, glob_prefix .. glob .. options.file_glob_postfix2)
   end
 
   --local glob_str = "*.go"

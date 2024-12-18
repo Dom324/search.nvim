@@ -5,9 +5,12 @@ local M = {}
 
 M.defaults = {
   round = true,
-  file_glob_prefix = "**/*",
-  file_glob_postfix = "*/**",
-  file_glob_postfix2 = "*",
+  glob_pre_post_fixes = {
+    -- when glob is a folder
+    { "**/", "*/**" },
+    -- when glob is a file
+    { "**/*", "*" }
+  },
   num_spaces = 20,
   split_path_file = true,
 }

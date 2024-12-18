@@ -1,5 +1,6 @@
 local n = require("nui-components")
 local fn = require("my_awesome_plugin.fn")
+local options = require("my_awesome_plugin.config").options
 
 --local function replace_handler(tree, node)
 --return {
@@ -28,12 +29,31 @@ local function prepare_node(node, line, component)
 
   local _, devicons = pcall(require, "nvim-web-devicons")
   local icon, icon_highlight = devicons.get_icon(node.text, string.match(node.text, "%a+$"), { default = true })
-  line:append(icon .. " ", icon_highlight)
+  line:append(icon .. "  ", icon_highlight)
 
-  local highlight_group = component:hl_group(node.is_marked and "SpectreSearchNewValue" or "SpectreCodeLine")
+  local fullpath = node.text
+  if string.sub(fullpath, 1, 2) == "./" then
+    fullpath = string.sub(fullpath, 3)
+  end
+
+  local filename = vim.fn.fnamemodify(fullpath, ":t")
+  local path = vim.fn.fnamemodify(fullpath, ":h")
+
+  local highlight_group_path = component:hl_group(node.is_marked and "SpectreSearchNewValue" or "SpectreCodeLine")
+  local highlight_group_file = component:hl_group(node.is_marked and "BufferDeffaultCurrent" or "BufferDeffaultCurrent")
   --local search_highlight_group = component:hl_group(is_replacing and "SpectreSearchOldValue" or "SpectreSearchValue")
   --local default_text_highlight = component:hl_group("SpectreCodeLine")
-  line:append(node.text, highlight_group)
+
+  if options.split_path_file then
+    line:append(filename, highlight_group_file)
+    local padding = options.num_spaces - string.len(filename)
+    line:append(string.rep(' ', padding) , highlight_group_file)
+    line:append(' ', highlight_group_file)
+    line:append(path, highlight_group_path)
+  else
+    line:append(path .. '/', highlight_group_path)
+    line:append(filename, highlight_group_file)
+  end
 
   return line
 end

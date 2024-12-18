@@ -220,7 +220,8 @@ function M.toggle()
             on_change = function(is_checked)
              query_signal.is_ignored_checked = is_checked
             end,
-          })
+          }),
+          n.gap(2)
         ),
         n.gap(1),
         file_tree({

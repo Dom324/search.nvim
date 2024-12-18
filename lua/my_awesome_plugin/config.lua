@@ -8,6 +8,8 @@ M.defaults = {
   file_glob_prefix = "**/*",
   file_glob_postfix = "*/**",
   file_glob_postfix2 = "*",
+  num_spaces = 20,
+  split_path_file = true,
 }
 
 ---@class Config

@@ -74,25 +74,24 @@ function M.search(options, input_signal, results_signal)
     -- glob_prefix = os.getenv( "HOME" ) .. '/' .. options.file_glob_prefix
   end
 
-  -- Prepend every path with prefix and postfix
+  -- TODO: Refactor into a function
   local expanded_globs = {}
   for _, glob in ipairs(input_signal.globs) do
-    for _,glob_pre_post_fix in ipairs(options.glob_pre_post_fixes) do
+    local first_char = string.sub(glob, 1, 1)
+    local is_glob_negated = first_char == "!"
+    if is_glob_negated then
+      negate_char = '!'
+      glob = string.sub(glob, 2)
+    else
+      negate_char = ''
+    end
+
+    for _, glob_pre_post_fix in ipairs(options.glob_pre_post_fixes) do
       glob_prefix = glob_pre_post_fix[1]
       glob_postfix = glob_pre_post_fix[2]
-      print(glob_prefix)
-      print(glob_postfix)
 
-      local first_char = string.sub(glob, 1, 1)
-      local glob_negated = first_char == "!"
-      if glob_negated then
-        glob = string.sub(glob, 2)
-        negate_char = '!'
-      else
-        negate_char = ''
-      end
-
-      table.insert(expanded_globs, negate_char .. glob_prefix .. glob .. glob_postfix)
+      expanded_glob = negate_char .. glob_prefix .. glob .. glob_postfix
+      table.insert(expanded_globs, expanded_glob)
     end
   end
 

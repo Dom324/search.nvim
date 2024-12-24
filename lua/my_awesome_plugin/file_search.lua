@@ -68,10 +68,8 @@ function M.search(options, input_signal, results_signal)
 
   if input_signal.search_cwd == SEARCH_CWD_PROJECT then
     search_path = '.'
-    -- glob_prefix = options.file_glob_prefix
   else
     search_path = os.getenv( "HOME" )
-    -- glob_prefix = os.getenv( "HOME" ) .. '/' .. options.file_glob_prefix
   end
 
   -- TODO: Refactor into a function
@@ -95,11 +93,15 @@ function M.search(options, input_signal, results_signal)
     end
   end
 
-  --local glob_str = "*.go"
   --local args = {'--json', 'hello', '-g', glob_str, search_path}
   local args = {}
-  table.insert(args, '--hidden')
+
+  if input_signal.is_hidden_checked then
+    table.insert(args, '--hidden')
+  end
+
   table.insert(args, '--files')
+
   for _, glob in ipairs(expanded_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
   table.insert(args, search_path)
 
@@ -116,14 +118,16 @@ function M.search(options, input_signal, results_signal)
       enable_recording = false,
       command = 'rg',
       cwd = vim.fn.getcwd(),
+      detached = true,
       args = args,
       on_stdout = function(_, value)
         pcall(vim.schedule_wrap(function()
+          print("first")
           table.insert(new_file_table, n.node({ text = value, is_marked = false}))
           num_files_found = num_files_found + 1
-          --if num_files_found == 1 then
-          --  results_signal.file_results = new_file_table
-          --end
+          -- if num_files_found == 1 then
+          --   results_signal.file_results = new_file_table
+          -- end
         end))
           --print(new_file_table[0].text)
           --results_signal.file_results = n.node({ text = "docs/readme.lua", is_marked = false })

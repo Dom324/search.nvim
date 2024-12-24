@@ -200,10 +200,10 @@ function M.toggle()
             default_sign = "",
             checked_sign = "",
             border_style = "rounded",
-            value =query_signal.is_hidden_checked,
+            value = query_signal.is_hidden_checked,
             is_focusable = false,
             border_label = HIDDEN_KEY,
-            press_key = HIDDEN_KEY,
+            global_press_key = HIDDEN_KEY,
             on_change = function(is_checked)
              query_signal.is_hidden_checked = is_checked
             end,
@@ -213,10 +213,10 @@ function M.toggle()
             default_sign = "",
             checked_sign = "",
             border_style = "rounded",
-            value =query_signal.is_ignored_checked,
+            value = query_signal.is_ignored_checked,
             is_focusable = false,
             border_label = IGNORED_KEY,
-            press_key = IGNORED_KEY,
+            global_press_key = IGNORED_KEY,
             on_change = function(is_checked)
              query_signal.is_ignored_checked = is_checked
             end,

@@ -50,30 +50,39 @@ function M.toggle()
     },
   })
 
-  local query_signal = n.create_signal({
-    search_query = "",
-    replace_query = "",
-    is_case_insensitive_checked = false,
-    is_whole_word_checked = false,
+  local initialize_querry = not options.preserve_querry_on_close or _G["query_signal"] == nil
+  if initialize_querry then
+    query_signal = n.create_signal({
+      search_query = "",
+      replace_query = "",
+      is_case_insensitive_checked = false,
+      is_whole_word_checked = false,
 
-    globs = {},
-    is_hidden_checked = false,
-    is_ignored_checked = false,
-    search_cwd = SEARCH_CWD_PROJECT,
-    search_cwd_str = SEARCH_CWD_PROJECT_STR,
-  })
+      globs = {},
+      is_hidden_checked = false,
+      is_ignored_checked = false,
+      search_cwd = SEARCH_CWD_PROJECT,
+      search_cwd_str = SEARCH_CWD_PROJECT_STR,
+    })
+  end
 
-  local search_results_signal = n.create_signal({
-    search_results = {},
-    is_search_loading = false,
-    search_info = "",
-  })
+  local initialize_search_results = not options.preserve_querry_on_close or _G["search_results_signal"] == nil
+  if initialize_search_results then
+    search_results_signal = n.create_signal({
+      search_results = {},
+      is_search_loading = false,
+      search_info = "",
+    })
+  end
 
-  local file_results_signal = n.create_signal({
-    is_file_search_loading = false,
-    file_results = {},
-    search_info = ""
-  })
+  local initialize_file_results = not options.preserve_querry_on_close or _G["file_results_signal"] == nil
+  if initialize_file_results then
+    file_results_signal = n.create_signal({
+      is_file_search_loading = false,
+      file_results = {},
+      search_info = ""
+    })
+  end
 
   local subscription_search = query_signal:observe(function(prev, curr)
     local diff_search = fn.isome({ "search_query", "replace_query", "is_case_insensitive_checked", "is_whole_word_checked" }, function(key)

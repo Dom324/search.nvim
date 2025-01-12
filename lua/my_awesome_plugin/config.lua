@@ -13,6 +13,7 @@ M.defaults = {
   },
   num_spaces = 20,
   split_path_file = true,
+  preserve_querry_on_close = true,
 }
 
 ---@class Config

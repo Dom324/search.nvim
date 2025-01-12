@@ -70,19 +70,18 @@ function M.search(options, input_signal, results_signal)
   local expanded_globs = {}
   for _, glob in ipairs(input_signal.globs) do
     local first_char = string.sub(glob, 1, 1)
+
     local is_glob_negated = first_char == "!"
+    local negate_char = is_glob_negated and '!' or ''
     if is_glob_negated then
-      negate_char = '!'
       glob = string.sub(glob, 2)
-    else
-      negate_char = ''
     end
 
     for _, glob_pre_post_fix in ipairs(options.glob_pre_post_fixes) do
-      glob_prefix = glob_pre_post_fix[1]
-      glob_postfix = glob_pre_post_fix[2]
+      local glob_prefix = glob_pre_post_fix[1]
+      local glob_postfix = glob_pre_post_fix[2]
 
-      expanded_glob = negate_char .. glob_prefix .. glob .. glob_postfix
+      local expanded_glob = negate_char .. glob_prefix .. glob .. glob_postfix
       table.insert(expanded_globs, expanded_glob)
     end
   end
@@ -98,7 +97,7 @@ function M.search(options, input_signal, results_signal)
 
   for _, glob in ipairs(expanded_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
 
-  args_str = table.concat(args, ' ')
+  local args_str = table.concat(args, ' ')
   print(args_str)
 
   results_signal.file_results = {}
@@ -125,11 +124,6 @@ function M.search(options, input_signal, results_signal)
           --   results_signal.file_results = new_file_table
           -- end
         end))
-          --print(new_file_table[0].text)
-          --results_signal.file_results = n.node({ text = "docs/readme.lua", is_marked = false })
-          --print("stdout")
-          --print(value)
-          --self:on_output(value)
       end,
       on_stderr = function(_, value)
           print("stderr")

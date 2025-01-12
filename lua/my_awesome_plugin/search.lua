@@ -93,7 +93,7 @@ function M.toggle()
     end)
 
     if diff_file then
-      glob_str = table.concat(curr.globs, ',')
+      local glob_str = table.concat(curr.globs, ',')
       if #glob_str > 2 then
         file_search.search(options, curr, file_results_signal)
       else

@@ -32,10 +32,6 @@ local function prepare_node(node, line, component)
   line:append(icon .. "  ", icon_highlight)
 
   local fullpath = node.text
-  if string.sub(fullpath, 1, 2) == "./" then
-    fullpath = string.sub(fullpath, 3)
-  end
-
   local filename = vim.fn.fnamemodify(fullpath, ":t")
   local path = vim.fn.fnamemodify(fullpath, ":h")
 

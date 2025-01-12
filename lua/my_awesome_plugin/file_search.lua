@@ -66,12 +66,6 @@ function M.search(options, input_signal, results_signal)
   M.stop(results_signal)
   local start_time = vim.loop.hrtime()
 
-  if input_signal.search_cwd == SEARCH_CWD_PROJECT then
-    search_path = '.'
-  else
-    search_path = os.getenv( "HOME" )
-  end
-
   -- TODO: Refactor into a function
   local expanded_globs = {}
   for _, glob in ipairs(input_signal.globs) do
@@ -103,7 +97,6 @@ function M.search(options, input_signal, results_signal)
   table.insert(args, '--files')
 
   for _, glob in ipairs(expanded_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
-  table.insert(args, search_path)
 
   args_str = table.concat(args, ' ')
   print(args_str)
@@ -114,10 +107,13 @@ function M.search(options, input_signal, results_signal)
   local new_file_table = {}
   local num_files_found = 0
 
+  local global_search = input_signal.search_cwd ~= SEARCH_CWD_PROJECT
+  local search_cwd = global_search and os.getenv( "HOME" ) or vim.fn.getcwd()
+
   job = Job:new({
       enable_recording = false,
       command = 'rg',
-      cwd = vim.fn.getcwd(),
+      cwd = search_cwd,
       detached = true,
       args = args,
       on_stdout = function(_, value)

@@ -101,3 +101,15 @@ Neovim is growing a nice ecosystem, but some parts of plugin development are som
 - [nvim-telescope/telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) - *Tests, lint, docs generation*
 
 I highly suggest [this video tutorial](https://youtu.be/n4Lp4cV8YR0?si=lHlxQBNvbTcXPhVY) by [TJ DeVries](https://github.com/tjdevries), a walkthrough of the Neovim plugin development process.
+
+## Persistent undo
+
+## Autoreaload buffer
+https://github.com/neovim/neovim/issues/1380
+
+vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "CursorHoldI", "FocusGained" }, {
+  command = "if mode() != 'c' | checktime | endif",
+  pattern = { "*" },
+})
+

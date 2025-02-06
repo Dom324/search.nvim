@@ -15,6 +15,7 @@ local HIDDEN_KEY = "<C-h>"
 local IGNORED_KEY = "<C-i>"
 local SEARCH_CWD_KEY = "<C-d>"
 local SEARCH_CMD_KEY = "<C-c>"
+local CLEAR_KEY = "<C-r>"
 
 local SEARCH_CWD_PROJECT_STR = "Project"
 local SEARCH_CWD_GLOBAL_STR = "Global "
@@ -53,6 +54,27 @@ function initialize_querry_state()
     file_results = {},
     search_info = ""
   })
+end
+
+function reset_querry_state()
+  query_signal.search_query = ""
+  query_signal.replace_query = ""
+  query_signal.is_case_insensitive_checked = false
+  query_signal.is_whole_word_checked = false
+
+  query_signal.globs = {}
+  query_signal.is_hidden_checked = false
+  query_signal.is_ignored_checked = false
+  query_signal.search_cwd = SEARCH_CWD_PROJECT
+  query_signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
+
+  search_results_signal.search_results = {}
+  search_results_signal.is_search_loading = false
+  search_results_signal.search_info = ""
+
+  file_results_signal.is_file_search_loading = false
+  file_results_signal.file_results = {}
+  file_results_signal.search_info = ""
 end
 
 local M = {}
@@ -183,7 +205,17 @@ function M.toggle()
           --  end,
           --}),
           n.button({
-            label =query_signal.search_cwd_str,
+            label = "Clear",
+            is_focusable = false,
+            border_style = "rounded",
+            border_label = CLEAR_KEY,
+            global_press_key = CLEAR_KEY,
+            on_press = function()
+              reset_querry_state()
+            end,
+          }),
+          n.button({
+            label = query_signal.search_cwd_str,
             is_focusable = false,
             border_style = "rounded",
             border_label = SEARCH_CWD_KEY,

@@ -30,6 +30,31 @@ local SEARCH_CWD_GLOBAL = 1
 --local SEARCH_CMD_REGEX = 1
 --local SEARCH_CMD_FUZZY = 2
 
+function initialize_querry_state()
+  query_signal = n.create_signal({
+    search_query = "",
+    replace_query = "",
+    is_case_insensitive_checked = false,
+    is_whole_word_checked = false,
+
+    globs = {},
+    is_hidden_checked = false,
+    is_ignored_checked = false,
+    search_cwd = SEARCH_CWD_PROJECT,
+    search_cwd_str = SEARCH_CWD_PROJECT_STR,
+  })
+  search_results_signal = n.create_signal({
+    search_results = {},
+    is_search_loading = false,
+    search_info = "",
+  })
+  file_results_signal = n.create_signal({
+    is_file_search_loading = false,
+    file_results = {},
+    search_info = ""
+  })
+end
+
 local M = {}
 
 function M.toggle()
@@ -52,36 +77,7 @@ function M.toggle()
 
   local initialize_querry = not options.preserve_querry_on_close or _G["query_signal"] == nil
   if initialize_querry then
-    query_signal = n.create_signal({
-      search_query = "",
-      replace_query = "",
-      is_case_insensitive_checked = false,
-      is_whole_word_checked = false,
-
-      globs = {},
-      is_hidden_checked = false,
-      is_ignored_checked = false,
-      search_cwd = SEARCH_CWD_PROJECT,
-      search_cwd_str = SEARCH_CWD_PROJECT_STR,
-    })
-  end
-
-  local initialize_search_results = not options.preserve_querry_on_close or _G["search_results_signal"] == nil
-  if initialize_search_results then
-    search_results_signal = n.create_signal({
-      search_results = {},
-      is_search_loading = false,
-      search_info = "",
-    })
-  end
-
-  local initialize_file_results = not options.preserve_querry_on_close or _G["file_results_signal"] == nil
-  if initialize_file_results then
-    file_results_signal = n.create_signal({
-      is_file_search_loading = false,
-      file_results = {},
-      search_info = ""
-    })
+    initialize_querry_state()
   end
 
   local subscription_search = query_signal:observe(function(prev, curr)

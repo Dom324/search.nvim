@@ -1,4 +1,4 @@
-local engine = require("my_awesome_plugin.engine")
+local engine = require("my_awesome_plugin.engine2")
 local options = require("my_awesome_plugin.config").options
 require("my_awesome_plugin.highlight")
 local fn = require("my_awesome_plugin.fn")
@@ -14,7 +14,7 @@ local CAPITAL_KEY = "<C-a>"
 local HIDDEN_KEY = "<C-h>"
 local IGNORED_KEY = "<C-i>"
 local SEARCH_CWD_KEY = "<C-d>"
-local SEARCH_CMD_KEY = "<C-c>"
+local QUICKFIX_LIST_KEY = "<C-c>"
 local CLEAR_KEY = "<C-r>"
 
 local SEARCH_CWD_PROJECT_STR = "Project"
@@ -67,14 +67,24 @@ function reset_querry_state()
   query_signal.is_ignored_checked = false
   query_signal.search_cwd = SEARCH_CWD_PROJECT
   query_signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
+end
 
+function reset_search_results_state()
   search_results_signal.search_results = {}
   search_results_signal.is_search_loading = false
   search_results_signal.search_info = ""
+end
 
+function reset_file_results_state()
   file_results_signal.is_file_search_loading = false
   file_results_signal.file_results = {}
   file_results_signal.search_info = ""
+end
+
+function reset_signal_state()
+  reset_querry_state()
+  reset_file_results_state()
+  reset_search_results_state()
 end
 
 local M = {}
@@ -103,29 +113,62 @@ function M.toggle()
   end
 
   local subscription_search = query_signal:observe(function(prev, curr)
-    local diff_search = fn.isome({ "search_query", "replace_query", "is_case_insensitive_checked", "is_whole_word_checked" }, function(key)
+
+    search_signals = { "search_query", "replace_query", "is_case_insensitive_checked", "is_whole_word_checked" }
+    local diff_search = fn.isome(search_signals, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
-    local diff_file = fn.isome({ "globs", "is_ignored_checked", "is_hidden_checked", "search_cwd" }, function(key)
+
+    file_signals = { "globs", "is_ignored_checked", "is_hidden_checked", "search_cwd" }
+    local diff_file = fn.isome(file_signals, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
+
+  -- TODO: Refactor into a function
+  local expanded_globs = {}
+  for _, glob in ipairs(curr.globs) do
+    local first_char = string.sub(glob, 1, 1)
+
+    local is_glob_negated = first_char == "!"
+    local negate_char = is_glob_negated and '!' or ''
+    if is_glob_negated then
+      glob = string.sub(glob, 2)
+    end
+
+    for _, glob_pre_post_fix in ipairs(options.glob_pre_post_fixes) do
+      local glob_prefix = glob_pre_post_fix[1]
+      local glob_postfix = glob_pre_post_fix[2]
+
+      local expanded_glob = negate_char .. glob_prefix .. glob .. glob_postfix
+      table.insert(expanded_globs, expanded_glob)
+    end
+  end
+
+  --local args = {'--json', 'hello', '-g', glob_str, search_path}
+  local args = {}
+
+  for _, glob in ipairs(expanded_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
+
+  if curr.is_hidden_checked then
+    table.insert(args, '--hidden')
+  end
+  local args_str = table.concat(args, ' ')
+  print("search args: " .. args_str)
 
     if diff_file then
       local glob_str = table.concat(curr.globs, ',')
       if #glob_str > 2 then
-        file_search.search(options, curr, file_results_signal)
+        file_search.search(options, curr, file_results_signal, args)
       else
-        file_results_signal.file_results = {}
-        file_results_signal.search_info = ""
+        reset_file_results_state()
       end
     end
 
-    if diff_search or diff_file then
+    if diff_search then
       if #curr.search_query > 2 then
-        engine.search(curr, search_results_signal)
+        engine.search(options, curr, search_results_signal, args)
       else
-        search_results_signal.search_info = ""
-        search_results_signal.search_results = {}
+        reset_search_results_state()
       end
     end
 
@@ -205,13 +248,22 @@ function M.toggle()
           --  end,
           --}),
           n.button({
+            label = "Quickfix",
+            is_focusable = false,
+            border_style = "rounded",
+            border_label = QUICKFIX_LIST_KEY,
+            global_press_key = QUICKFIX_LIST_KEY,
+            on_press = function()
+            end,
+          }),
+          n.button({
             label = "Clear",
             is_focusable = false,
             border_style = "rounded",
             border_label = CLEAR_KEY,
             global_press_key = CLEAR_KEY,
             on_press = function()
-              reset_querry_state()
+              reset_signal_state()
             end,
           }),
           n.button({
@@ -285,6 +337,7 @@ function M.toggle()
             autofocus = true,
             max_lines = 1,
             flex = 1,
+            value = query_signal.search_query,
             on_change = fn.debounce(function(value)
               query_signal.search_query = value
             end, 400),
@@ -303,6 +356,7 @@ function M.toggle()
           border_label = "Replace",
           autofocus = true,
           max_lines = 1,
+          value = query_signal.replace_query,
           on_change = fn.debounce(function(value)
             query_signal.replace_query = value
           end, 400),

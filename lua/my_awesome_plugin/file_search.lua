@@ -4,6 +4,18 @@ local n = require("nui-components")
 local M = {}
 -- TODO: this should be loaded from some input file
 local SEARCH_CWD_PROJECT = 0
+function dump(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. dump(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
+end
 
 --base.on_error = function(self, value, ref)
 --    if value ~= 0 then
@@ -114,48 +126,20 @@ function sort_paths(a, b)
   end
 end
 
-function M.search(options, input_signal, results_signal)
+function M.search(options, input_signal, results_signal, args)
 
   --self.handler.on_start()
   M.stop(results_signal)
-  local start_time_total = vim.loop.hrtime()
-
-  -- TODO: Refactor into a function
-  local expanded_globs = {}
-  for _, glob in ipairs(input_signal.globs) do
-    local first_char = string.sub(glob, 1, 1)
-
-    local is_glob_negated = first_char == "!"
-    local negate_char = is_glob_negated and '!' or ''
-    if is_glob_negated then
-      glob = string.sub(glob, 2)
-    end
-
-    for _, glob_pre_post_fix in ipairs(options.glob_pre_post_fixes) do
-      local glob_prefix = glob_pre_post_fix[1]
-      local glob_postfix = glob_pre_post_fix[2]
-
-      local expanded_glob = negate_char .. glob_prefix .. glob .. glob_postfix
-      table.insert(expanded_globs, expanded_glob)
-    end
-  end
-
-  --local args = {'--json', 'hello', '-g', glob_str, search_path}
-  local args = {}
-
-  if input_signal.is_hidden_checked then
-    table.insert(args, '--hidden')
-  end
-
-  table.insert(args, '--files')
-
-  for _, glob in ipairs(expanded_globs) do table.insert(args, '-g') table.insert(args, glob) end     -- Prepend every glob with '-g' flag
-
-  local args_str = table.concat(args, ' ')
-  print("args: " .. args_str)
 
   results_signal.file_results = {}
   results_signal.is_file_search_loading = true
+
+  local start_time_total = vim.loop.hrtime()
+
+  table.insert(args, '--files')
+
+  local args_str_for_files = table.concat(args, ' ')
+  print("file args: " .. args_str_for_files)
 
   local new_file_table = {}
   local num_files_found = 0

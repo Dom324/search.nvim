@@ -14,8 +14,9 @@ M.defaults = {
   num_spaces = 20,
   split_path_file = true,
   preserve_querry_on_close = true,
-  max_files_to_display = 100,
   sort_files = true,
+  max_files_to_display = 100,
+  max_matches_to_display = 100,
 }
 
 ---@class Config

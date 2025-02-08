@@ -35,6 +35,11 @@ local function prepare_node(node, line, component)
   local filename = vim.fn.fnamemodify(fullpath, ":t")
   local path = vim.fn.fnamemodify(fullpath, ":h")
 
+  -- Fixup path for files in the top directory
+  -- if path == "." then
+  --   path = ""
+  -- end
+
   local highlight_group_path = component:hl_group(node.is_marked and "SpectreSearchNewValue" or "SpectreCodeLine")
   local highlight_group_file = component:hl_group(node.is_marked and "BufferDeffaultCurrent" or "BufferDeffaultCurrent")
   --local search_highlight_group = component:hl_group(is_replacing and "SpectreSearchOldValue" or "SpectreSearchValue")

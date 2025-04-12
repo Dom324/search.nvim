@@ -36,9 +36,9 @@ local SEARCH_CWD_GLOBAL = 1
 local M = {}
 
 function M.initialize_signals()
-  query_signal = n.create_signal(M.defaults.query_signal)
-  search_results_signal = n.create_signal(M.defaults.search_results_signal)
-  file_results_signal = n.create_signal(M.defaults.file_results_signal)
+  M.query_signal = n.create_signal(M.defaults.query_signal)
+  M.search_results_signal = n.create_signal(M.defaults.search_results_signal)
+  M.file_results_signal = n.create_signal(M.defaults.file_results_signal)
 end
 
 function M.reset_querry_state()
@@ -116,12 +116,12 @@ function M.toggle()
     -- end
   end)
 
-  local initialize_signals = not options.preserve_querry_on_close or _G["query_signal"] == nil
+  local initialize_signals = not options.preserve_querry_on_close or M.query_signal == nil
   if initialize_signals then
     M.initialize_signals()
   end
 
-  local subscription_search = query_signal:observe(function(prev, curr)
+  local subscription_search = M.query_signal:observe(function(prev, curr)
 
     search_signals = { "search_query", "replace_query", "is_case_insensitive_checked", "is_whole_word_checked" }
     local diff_search = fn.isome(search_signals, function(key)
@@ -176,7 +176,7 @@ function M.toggle()
 
     if diff_file then
       if #curr.glob_query > 2 then
-        file_search.search(options, curr, file_results_signal, args)
+        file_search.search(options, curr, M.file_results_signal, args)
       else
         M.reset_file_results_state()
       end
@@ -184,14 +184,14 @@ function M.toggle()
 
     if diff_search then
       if #curr.search_query > 2 then
-        engine.search(options, curr, search_results_signal, args)
+        engine.search(options, curr, M.search_results_signal, args)
       else
         M.reset_search_results_state()
       end
     end
 
     if not (prev.replace_query == curr.replace_query) and #curr.search_query > 2 then
-      search_results_signal.search_results = engine.process(curr)
+      M.search_results_signal.search_results = engine.process(curr)
     end
   end)
 
@@ -212,19 +212,19 @@ function M.toggle()
             max_lines = 1,
             flex = 1,
             placeholder = " e.g. \"src/ work/\" \".lua\" \".{lua,md}\"",
-            value = query_signal.glob_query,
+            value = M.query_signal.glob_query,
             on_mount = function(component)
               utils.set_component_value(component, M.defaults.query_signal.glob_query)
             end,
             on_change = function(value)
-              query_signal.glob_query = value
+              M.query_signal.glob_query = value
             end,
           }),
           n.rows(
           { size = 2 },
             n.gap(1),
             n.spinner({
-              is_loading = file_results_signal.is_file_search_loading,
+              is_loading = M.file_results_signal.is_file_search_loading,
               frames = spinner_formats.dots_9,
             })
           )
@@ -235,7 +235,7 @@ function M.toggle()
           n.rows(
             n.gap({ flex = 1 }),
             n.paragraph({
-              lines = file_results_signal.search_info,
+              lines = M.file_results_signal.search_info,
               is_focusable = false,
               padding = {
                 left = 1,
@@ -286,20 +286,20 @@ function M.toggle()
             end,
           }),
           n.button({
-            label = query_signal.search_cwd_str,
+            label = M.query_signal.search_cwd_str,
             is_focusable = false,
             border_style = "rounded",
             border_label = SEARCH_CWD_KEY,
             global_press_key = SEARCH_CWD_KEY,
             on_press = function()
                 -- Carousel option
-                local curr_search_cwd =query_signal.search_cwd:get_value()
+                local curr_search_cwd = M.query_signal.search_cwd:get_value()
                 if curr_search_cwd == SEARCH_CWD_PROJECT then
-                   query_signal.search_cwd = SEARCH_CWD_GLOBAL
-                   query_signal.search_cwd_str = SEARCH_CWD_GLOBAL_STR
+                   M.query_signal.search_cwd = SEARCH_CWD_GLOBAL
+                   M.query_signal.search_cwd_str = SEARCH_CWD_GLOBAL_STR
                 else
-                   query_signal.search_cwd = SEARCH_CWD_PROJECT
-                   query_signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
+                   M.query_signal.search_cwd = SEARCH_CWD_PROJECT
+                   M.query_signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
                 end
             end,
           }),
@@ -308,12 +308,12 @@ function M.toggle()
             default_sign = "",
             checked_sign = "",
             border_style = "rounded",
-            value = query_signal.is_hidden_checked,
+            value = M.query_signal.is_hidden_checked,
             is_focusable = false,
             border_label = HIDDEN_KEY,
             global_press_key = HIDDEN_KEY,
             on_change = function(is_checked)
-             query_signal.is_hidden_checked = is_checked
+             M.query_signal.is_hidden_checked = is_checked
             end,
           }),
           n.checkbox({
@@ -321,23 +321,23 @@ function M.toggle()
             default_sign = "",
             checked_sign = "",
             border_style = "rounded",
-            value = query_signal.is_ignored_checked,
+            value = M.query_signal.is_ignored_checked,
             is_focusable = false,
             border_label = IGNORED_KEY,
             global_press_key = IGNORED_KEY,
             on_change = function(is_checked)
-             query_signal.is_ignored_checked = is_checked
+             M.query_signal.is_ignored_checked = is_checked
             end,
           }),
           n.gap(2)
         ),
         n.gap(1),
         file_tree({
-          search_query = query_signal.search_query,
-          replace_query = query_signal.replace_query,
-          data = file_results_signal.file_results,
+          search_query = M.query_signal.search_query,
+          replace_query = M.query_signal.replace_query,
+          data = M.file_results_signal.file_results,
           --origin_winid = renderer:get_origin_winid(),
-          hidden = file_results_signal.file_results:map(function(value)
+          hidden = M.file_results_signal.file_results:map(function(value)
             return #value == 0
           end),
         }),
@@ -358,19 +358,19 @@ function M.toggle()
             max_lines = 1,
             flex = 1,
             placeholder = " e.g. \"old_name\" \"old_prefix(.*)_old_post_fix\"",
-            value = query_signal.search_query,
+            value = M.query_signal.search_query,
             on_mount = function(component)
               utils.set_component_value(component, M.defaults.query_signal.search_query)
             end,
             on_change = function(value)
-              query_signal.search_query = value
+              M.query_signal.search_query = value
             end,
           }),
           n.rows(
           { size = 2 },
             n.gap(1),
             n.spinner({
-              is_loading = search_results_signal.is_search_loading,
+              is_loading = M.search_results_signal.is_search_loading,
               frames = spinner_formats.dots_9,
             })
           )
@@ -382,12 +382,12 @@ function M.toggle()
           autofocus = true,
           max_lines = 1,
           placeholder = " e.g. \"new_name\" \"new_prefix\\1_new_post_fix\"",
-          value = query_signal.replace_query,
+          value = M.query_signal.replace_query,
           on_mount = function(component)
             utils.set_component_value(component, M.defaults.query_signal.replace_query)
           end,
           on_change = function(value)
-            query_signal.replace_query = value
+            M.query_signal.replace_query = value
           end,
         }),
         n.columns(
@@ -395,7 +395,7 @@ function M.toggle()
           n.rows(
             n.gap({ flex = 1 }),
             n.paragraph({
-              lines = search_results_signal.search_info,
+              lines = M.search_results_signal.search_info,
               is_focusable = false,
               padding = {
                 left = 1,
@@ -413,9 +413,9 @@ function M.toggle()
             is_focusable = false,
             border_label = CAPITAL_KEY,
             press_key = CAPITAL_KEY,
-            value = query_signal.is_case_insensitive_checked,
+            value = M.query_signal.is_case_insensitive_checked,
             on_change = function(is_checked)
-              query_signal.is_case_insensitive_checked = is_checked
+              M.query_signal.is_case_insensitive_checked = is_checked
             end,
           }),
           n.checkbox({
@@ -426,19 +426,19 @@ function M.toggle()
             is_focusable = false,
             border_label = WORD_KEY,
             press_key = WORD_KEY,
-            value = query_signal.is_whole_word_checked,
+            value = M.query_signal.is_whole_word_checked,
             on_change = function(is_checked)
-              query_signal.is_whole_word_checked = is_checked
+              M.query_signal.is_whole_word_checked = is_checked
             end,
           })
         ),
         n.gap(1),
         search_tree({
-          search_query = query_signal.search_query,
-          replace_query = query_signal.replace_query,
-          data = search_results_signal.search_results,
+          search_query = M.query_signal.search_query,
+          replace_query = M.query_signal.replace_query,
+          data = M.search_results_signal.search_results,
           origin_winid = renderer:get_origin_winid(),
-          hidden = search_results_signal.search_results:map(function(value)
+          hidden = M.search_results_signal.search_results:map(function(value)
             return #value == 0
           end),
         }),

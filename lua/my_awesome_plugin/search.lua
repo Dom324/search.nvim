@@ -1,7 +1,6 @@
 local engine = require("my_awesome_plugin.engine2")
 local options = require("my_awesome_plugin.config").options
 require("my_awesome_plugin.highlight")
-local fn = require("my_awesome_plugin.fn")
 local search_tree = require("my_awesome_plugin.search_tree")
 local file_tree = require("my_awesome_plugin.file_tree")
 local file_search = require("my_awesome_plugin.file_search")
@@ -122,12 +121,12 @@ function M.toggle()
 
     local subscription_search = M.query_signal:observe(function(prev, curr)
         local search_signals = { "search_query", "replace_query", "is_case_insensitive_checked", "is_whole_word_checked" }
-        local diff_search = fn.isome(search_signals, function(key)
+        local diff_search = utils.isome(search_signals, function(key)
             return not vim.deep_equal(prev[key], curr[key])
         end)
 
         local file_signals = { "glob_query", "is_ignored_checked", "is_hidden_checked", "search_cwd" }
-        local diff_file = fn.isome(file_signals, function(key)
+        local diff_file = utils.isome(file_signals, function(key)
             return not vim.deep_equal(prev[key], curr[key])
         end)
 

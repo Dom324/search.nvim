@@ -1,5 +1,5 @@
 local n = require("nui-components")
-local fn = require("my_awesome_plugin.fn")
+local utils = require("my_awesome_plugin.utils")
 
 local function replace_handler(tree, node)
 return {
@@ -68,9 +68,9 @@ local function prepare_node(node, line, component)
   end
 
   if #node.diff.search > 0 then
-    local code_text = fn.trim(node.diff.text)
+    local code_text = utils.trim(node.diff.text)
 
-    fn.ieach(node.diff.search, function(value, index)
+    utils.ieach(node.diff.search, function(value, index)
       local start = value[1] - empty_spaces
       local end_ = value[2] - empty_spaces
 

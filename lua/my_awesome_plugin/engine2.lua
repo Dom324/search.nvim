@@ -9,8 +9,6 @@ local spectre_utils = require("spectre.utils")
 
 local Tree = require("nui.tree")
 
-local fn = require("my_awesome_plugin.fn")
-
 local M = {}
 
 function M.process(options)
@@ -235,43 +233,7 @@ function M.search(options, input_signal, results_signal, file_args)
       end,
   })
 
-  -- return fn.kmap(spectre_state.groups, function(group, filename)
-  --   local children = fn.imap(group, function(entry)
-  --
-  --     local diff = spectre_utils.get_hl_line_text({
-  --       search_query = options.search_query,
-  --       replace_query = options.replace_query,
-  --       search_text = entry.text,
-  --       padding = 0,
-  --     }, spectre_state.regex)
-  --
-  --   end)
-  --
-  --   local id = tostring(math.random())
-  --   local node = Tree.Node({ text = filename:gsub("^./", ""), _id = id }, children)
-  --
-  --   node:expand()
-  --
-  --   return node
-      -- return Tree.Node({ text = diff.text, _id = id, diff = diff, entry = entry })
   job:start()
 end
-
---   local search_engine = spectre_search["rg"]
---   spectre_state.options["ignore-case"] = not input_signal.is_case_insensitive_checked
---   spectre_state.finder_instance =
---     search_engine:new(spectre_state_utils.get_search_engine_config(), search_handler(input_signal, results_signal))
---   spectre_state.regex = require("spectre.regex.vim")
---
---   pcall(function()
---     spectre_state.finder_instance:search({
---       cwd = vim.fn.getcwd(),
---       search_text = input_signal.search_query,
---       replace_query = input_signal.replace_query,
---       -- path = spectre_state.query.path,
---       search_paths = #input_signal.search_paths > 0 and input_signal.search_paths or nil,
---     })
---   end)
--- end
 
 return M

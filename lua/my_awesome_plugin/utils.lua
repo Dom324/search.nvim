@@ -52,4 +52,38 @@ function M.set_component_value(component, value)
   return component
 end
 
+function M.isome(tbl, func)
+  for index, item in ipairs(tbl) do
+    if func(item, index) then
+      return true
+    end
+  end
+
+  return false
+end
+
+function M.kmap(tbl, func)
+  return M.kreduce(tbl, function(new_tbl, value, key)
+    table.insert(new_tbl, func(value, key))
+    return new_tbl
+  end, {})
+end
+
+function M.imap(tbl, func)
+  return M.ireduce(tbl, function(new_tbl, value, index)
+    table.insert(new_tbl, func(value, index))
+    return new_tbl
+  end, {})
+end
+
+function M.trim(str)
+  return (str:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+function M.ieach(tbl, func)
+  for index, element in ipairs(tbl) do
+    func(element, index)
+  end
+end
+
 return M

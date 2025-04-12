@@ -3,8 +3,7 @@ local n = require("nui-components")
 
 local M = {}
 
--- TODO: this should be loaded from some input file
-local SEARCH_CWD_PROJECT = 0
+local enums = require("my_awesome_plugin.enums")
 
 local function sort_paths(a, b)
     local split_a = vim.split(a.text, "/", { plain = true, trimempty = true })
@@ -76,7 +75,7 @@ function M.search(options, input_signal, results_signal, args)
     local new_file_table = {}
     local num_files_found = 0
 
-    local global_search = input_signal.search_cwd ~= SEARCH_CWD_PROJECT
+    local global_search = input_signal.search_cwd ~= enums.cwd.PROJECT
     local search_cwd = global_search and os.getenv("HOME") or vim.fn.getcwd()
 
     local start_time_rg = vim.loop.hrtime()

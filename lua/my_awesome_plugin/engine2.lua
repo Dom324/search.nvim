@@ -1,7 +1,6 @@
 local Job = require('plenary.job')
 
--- TODO: this should be loaded from some input file
-local SEARCH_CWD_PROJECT = 0
+local enums = require("my_awesome_plugin.enums")
 
 local spectre_state = require("spectre.state")
 local spectre_utils = require("spectre.utils")
@@ -41,7 +40,7 @@ function M.search(options, input_signal, results_signal, file_args)
     local num_matches_found = 0
     local curr_file = nil
 
-    local global_search = input_signal.search_cwd ~= SEARCH_CWD_PROJECT
+    local global_search = input_signal.search_cwd ~= enums.cwd.PROJECT
     local search_cwd = global_search and os.getenv("HOME") or vim.fn.getcwd()
 
     local start_time_rg = vim.loop.hrtime()

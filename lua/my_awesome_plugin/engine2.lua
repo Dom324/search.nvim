@@ -4,22 +4,7 @@ local inspect = require('my_awesome_plugin.inspect')
 -- TODO: this should be loaded from some input file
 local SEARCH_CWD_PROJECT = 0
 
-function dump(o)
-   if type(o) == 'table' then
-      local s = '{ '
-      for k,v in pairs(o) do
-         if type(k) ~= 'number' then k = '"'..k..'"' end
-         s = s .. '['..k..'] = ' .. dump(v) .. ','
-      end
-      return s .. '} '
-   else
-      return tostring(o)
-   end
-end
-
-local spectre_search = require("spectre.search")
 local spectre_state = require("spectre.state")
-local spectre_state_utils = require("spectre.state_utils")
 local spectre_utils = require("spectre.utils")
 
 local Tree = require("nui.tree")
@@ -142,7 +127,7 @@ function M.search(options, input_signal, results_signal, file_args)
 
   local start_time_rg = vim.loop.hrtime()
 
-  job = Job:new({
+  local job = Job:new({
       enable_recording = false,
       command = 'rg',
       cwd = search_cwd,
@@ -154,7 +139,7 @@ function M.search(options, input_signal, results_signal, file_args)
             return
           end
           -- print(value)
-          rg_output = vim.json.decode(value)
+          local rg_output = vim.json.decode(value)
 
           if rg_output.type == "begin" then
               assert(curr_file == nil, "rg error: begin begin for an already existing file")

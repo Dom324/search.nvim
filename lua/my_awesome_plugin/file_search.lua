@@ -4,7 +4,7 @@ local n = require("nui-components")
 local M = {}
 -- TODO: this should be loaded from some input file
 local SEARCH_CWD_PROJECT = 0
-function dump(o)
+local function dump(o)
    if type(o) == 'table' then
       local s = '{ '
       for k,v in pairs(o) do
@@ -72,7 +72,7 @@ end
 --    end))
 --end
 
-function sort_paths(a, b)
+local function sort_paths(a, b)
 
   local split_a = vim.split(a.text, "/", { plain = true, trimempty = true })
   local split_b = vim.split(b.text, "/", { plain = true, trimempty = true })
@@ -149,7 +149,7 @@ function M.search(options, input_signal, results_signal, args)
 
   local start_time_rg = vim.loop.hrtime()
 
-  job = Job:new({
+  local job = Job:new({
       enable_recording = false,
       command = 'rg',
       cwd = search_cwd,

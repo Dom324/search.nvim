@@ -123,12 +123,12 @@ function M.toggle()
 
   local subscription_search = M.query_signal:observe(function(prev, curr)
 
-    search_signals = { "search_query", "replace_query", "is_case_insensitive_checked", "is_whole_word_checked" }
+    local search_signals = { "search_query", "replace_query", "is_case_insensitive_checked", "is_whole_word_checked" }
     local diff_search = fn.isome(search_signals, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
 
-    file_signals = { "glob_query", "is_ignored_checked", "is_hidden_checked", "search_cwd" }
+    local file_signals = { "glob_query", "is_ignored_checked", "is_hidden_checked", "search_cwd" }
     local diff_file = fn.isome(file_signals, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)

@@ -1,6 +1,5 @@
 local engine = require("my_awesome_plugin.engine2")
 local options = require("my_awesome_plugin.config").options
-require("my_awesome_plugin.highlight")
 
 local file_search = require("my_awesome_plugin.file_search")
 local enums = require("my_awesome_plugin.enums")

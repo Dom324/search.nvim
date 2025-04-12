@@ -46,7 +46,7 @@ function M.reset_querry_state()
 
   utils.set_component_buffer_content(M.renderer:get_component_by_id("search_query"), "")
   utils.set_component_buffer_content(M.renderer:get_component_by_id("replace_query"), "")
-  utils.set_component_buffer_content(M.renderer:get_component_by_id("globs"), {})
+  utils.set_component_buffer_content(M.renderer:get_component_by_id("glob_query"), "")
 end
 
 function M.reset_search_results_state()
@@ -78,7 +78,7 @@ function M.toggle()
       is_case_insensitive_checked = false,
       is_whole_word_checked = false,
 
-      globs = {},
+      glob_query = "",
       is_hidden_checked = false,
       is_ignored_checked = false,
       search_cwd = SEARCH_CWD_PROJECT,
@@ -128,14 +128,24 @@ function M.toggle()
       return not vim.deep_equal(prev[key], curr[key])
     end)
 
-    file_signals = { "globs", "is_ignored_checked", "is_hidden_checked", "search_cwd" }
+    file_signals = { "glob_query", "is_ignored_checked", "is_hidden_checked", "search_cwd" }
     local diff_file = fn.isome(file_signals, function(key)
       return not vim.deep_equal(prev[key], curr[key])
     end)
 
+    local function split(str, delimiter)
+        local returnTable = {}
+        for k, v in string.gmatch(str, "([^" .. delimiter .. "]+)")
+        do
+            returnTable[#returnTable+1] = k
+        end
+        return returnTable
+    end
+
   -- TODO: Refactor into a function
   local expanded_globs = {}
-  for _, glob in ipairs(curr.globs) do
+  local globs = split(curr.glob_query, ' ')
+  for _, glob in ipairs(globs) do
     local first_char = string.sub(glob, 1, 1)
 
     local is_glob_negated = first_char == "!"
@@ -165,8 +175,7 @@ function M.toggle()
   print("search args: " .. args_str)
 
     if diff_file then
-      local glob_str = table.concat(curr.globs, ',')
-      if #glob_str > 2 then
+      if #curr.glob_query > 2 then
         file_search.search(options, curr, file_results_signal, args)
       else
         M.reset_file_results_state()
@@ -197,19 +206,19 @@ function M.toggle()
         n.columns(
           { size = 2 },
           n.text_input({
-            id = "globs",
+            id = "glob_query",
             border_label = "File glob",
             autofocus = true,
             max_lines = 1,
             flex = 1,
-            value = query_signal.globs:map(function(paths)
-              return table.concat(paths, " ")
-            end),
-            on_change = fn.debounce(function(value)
-              query_signal.globs = fn.ireject(fn.imap(vim.split(value, " "), fn.trim), function(path)
-                return path == ""
-              end)
-            end, 400),
+            placeholder = " e.g. \"src/ work/\" \".lua\" \".{lua,md}\"",
+            value = query_signal.glob_query,
+            on_mount = function(component)
+              utils.set_component_value(component, M.defaults.query_signal.glob_query)
+            end,
+            on_change = function(value)
+              query_signal.glob_query = value
+            end,
           }),
           n.rows(
           { size = 2 },
@@ -348,7 +357,11 @@ function M.toggle()
             autofocus = true,
             max_lines = 1,
             flex = 1,
+            placeholder = " e.g. \"old_name\" \"old_prefix(.*)_old_post_fix\"",
             value = query_signal.search_query,
+            on_mount = function(component)
+              utils.set_component_value(component, M.defaults.query_signal.search_query)
+            end,
             on_change = fn.debounce(function(value)
               query_signal.search_query = value
             end, 400),
@@ -368,7 +381,11 @@ function M.toggle()
           border_label = "Replace",
           autofocus = true,
           max_lines = 1,
+          placeholder = " e.g. \"new_name\" \"new_prefix\\1_new_post_fix\"",
           value = query_signal.replace_query,
+          on_mount = function(component)
+            utils.set_component_value(component, M.defaults.query_signal.replace_query)
+          end,
           on_change = fn.debounce(function(value)
             query_signal.replace_query = value
           end, 400),

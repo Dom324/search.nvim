@@ -10,87 +10,10 @@ local Tree = require("nui.tree")
 
 local M = {}
 
-function M.process(options)
-  options = options or {}
-
-  return fn.kmap(spectre_state.groups, function(group, filename)
-    local children = fn.imap(group, function(entry)
-      local id = tostring(math.random())
-
-      local diff = spectre_utils.get_hl_line_text({
-        search_query = options.search_query,
-        replace_query = options.replace_query,
-        search_text = entry.text,
-        padding = 0,
-      }, spectre_state.regex)
-
-      return Tree.Node({ text = diff.text, _id = id, diff = diff, entry = entry })
-    end)
-
-    local id = tostring(math.random())
-    local node = Tree.Node({ text = filename:gsub("^./", ""), _id = id }, children)
-
-    node:expand()
-
-    return node
-  end)
-end
-
-local function search_handler(options, results_signal)
-  local start_time = 0
-  local total = 0
-
-  spectre_state.groups = {}
-
-  return {
-    on_start = function()
-      spectre_state.is_running = true
-      start_time = vim.loop.hrtime()
-      results_signal.is_search_loading = true
-    end,
-    on_result = function(item)
-      if not spectre_state.is_running then
-        return
-      end
-
-      if not spectre_state.groups[item.filename] then
-        spectre_state.groups[item.filename] = {}
-      end
-
-      table.insert(spectre_state.groups[item.filename], item)
-      total = total + 1
-    end,
-    on_error = function(_) end,
-    on_finish = function()
-      if not spectre_state.is_running then
-        return
-      end
-
-      local end_time = (vim.loop.hrtime() - start_time) / 1E9
-
-      results_signal.search_results = M.process(options)
-      results_signal.search_info = string.format("Total: %s match, time: %ss", total, end_time)
-      results_signal.is_search_loading = false
-
-      spectre_state.finder_instance = nil
-      spectre_state.is_running = false
-    end,
-  }
-end
-
--- function M.stop()
---   if not spectre_state.finder_instance then
---     return
---   end
---
---   spectre_state.finder_instance:stop()
---   spectre_state.finder_instance = nil
--- end
-
 function M.stop(results_signal)
   if results_signal.is_search_loading == true then
       print("stopping search")
-      job:shutdown()
+      M.job:shutdown()
       results_signal.is_search_loading = false
   end
 end
@@ -158,7 +81,6 @@ function M.search(options, input_signal, results_signal, file_args)
           else
               error("rg error: unknown type:" .. rg_output.type)
           end
---hello helohell
 
           --
           --
@@ -201,6 +123,7 @@ function M.search(options, input_signal, results_signal, file_args)
         table.insert(child_arr, children)
       end
     end
+    local id = tostring(math.random())
     local node = Tree.Node({ text = filename:gsub("^./", ""), _id = id }, child_arr)
     table.insert(tree, node)
   end
@@ -227,11 +150,11 @@ function M.search(options, input_signal, results_signal, file_args)
           results_signal.search_results = tree
           results_signal.search_info = string.format("Total: %s match, time: %ss", num_matches_found, total_time_total)
         end))
-          --self:on_exit(value)
       end,
   })
 
   job:start()
+  M.job = job
 end
 
 return M

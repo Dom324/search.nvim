@@ -2,6 +2,7 @@ local Job = require('plenary.job')
 local n = require("nui-components")
 
 local M = {}
+
 -- TODO: this should be loaded from some input file
 local SEARCH_CWD_PROJECT = 0
 
@@ -38,9 +39,9 @@ local function sort_paths(a, b)
     local shorter_len = not segment_a_shorter and #path_segment_a or #path_segment_b
 
     -- 2. Sort alphabetically
-    for i = 1, shorter_len do
-      local char_a = path_segment_a:sub(i, i)
-      local char_b = path_segment_b:sub(i, i)
+    for j = 1, shorter_len do
+      local char_a = path_segment_a:sub(j, j)
+      local char_b = path_segment_b:sub(j, j)
       if char_a ~= char_b then
         return char_a < char_b
       end
@@ -109,7 +110,6 @@ function M.search(options, input_signal, results_signal, args)
 
           print("stderr")
           print(value)
-          --self:on_error(value)
       end,
       on_exit = function(_, value)
           print("exit: " .. tostring(value))
@@ -138,17 +138,17 @@ function M.search(options, input_signal, results_signal, args)
           results_signal.file_results = new_file_table
           results_signal.search_info = string.format("Total: %s match, time: %ss", num_files_found, total_time_total)
         end))
-          --self:on_exit(value)
       end,
   })
 
   job:start()
+  M.job = job
 end
 
 function M.stop(results_signal)
   if results_signal.is_file_search_loading == true then
       print("stopping search")
-      job:shutdown()
+      M.job:shutdown()
       results_signal.is_file_search_loading = false
   end
 end

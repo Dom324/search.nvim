@@ -1,18 +1,6 @@
 local n = require("nui-components")
 local options = require("my_awesome_plugin.config").options
 
---local function replace_handler(tree, node)
---return {
---  on_done = function(result)
---    if result.ref then
---      node.ref = result.ref
---      tree:render()
---    end
---  end,
---  on_error = function(_) end,
---}
---end
-
 local function on_select(node, component)
     local tree = component:get_tree()
     node.is_marked = not node.is_marked
@@ -75,11 +63,3 @@ local function file_tree(props)
 end
 
 return file_tree
-
-
---      return { "rg", "--files", "--color", "never" }
---      find_command[#find_command + 1] = "--hidden"
---      find_command[#find_command + 1] = "--no-ignore"
---      find_command[#find_command + 1] = "-L"
---        find_command[#find_command + 1] = "-g"
---        find_command[#find_command + 1] = "*" .. search_file .. "*"

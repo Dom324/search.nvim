@@ -362,9 +362,9 @@ function M.toggle()
             on_mount = function(component)
               utils.set_component_value(component, M.defaults.query_signal.search_query)
             end,
-            on_change = fn.debounce(function(value)
+            on_change = function(value)
               query_signal.search_query = value
-            end, 400),
+            end,
           }),
           n.rows(
           { size = 2 },
@@ -386,9 +386,9 @@ function M.toggle()
           on_mount = function(component)
             utils.set_component_value(component, M.defaults.query_signal.replace_query)
           end,
-          on_change = fn.debounce(function(value)
+          on_change = function(value)
             query_signal.replace_query = value
-          end, 400),
+          end,
         }),
         n.columns(
           { size = 2 },

@@ -1,5 +1,4 @@
 local Job = require('plenary.job')
-local inspect = require('my_awesome_plugin.inspect')
 
 -- TODO: this should be loaded from some input file
 local SEARCH_CWD_PROJECT = 0
@@ -196,7 +195,6 @@ function M.search(options, input_signal, results_signal, file_args)
       for _, submatch in pairs(matched_line.submatches) do
         local id = tostring(math.random())
         -- local search = { submatch.start, submatch.end }
-                            print(inspect(submatch))
         local search = { submatch.start, submatch["end"] }
         local diff = { search = { search }, replace = "", text = matched_line.lines.text }
         local children = Tree.Node({ text = matched_line.lines.text, _id = id, diff = diff, entry = nil })

@@ -25,7 +25,7 @@ local my_awesome_plugin = {}
 ---@param options Config: config table
 ---@eval { ['description'] = require('my_awesome_plugin.config').__format_keys() }
 my_awesome_plugin.setup = function(options)
-  require("my_awesome_plugin.config").__setup(options)
+    require("my_awesome_plugin.config").__setup(options)
 end
 
 return my_awesome_plugin

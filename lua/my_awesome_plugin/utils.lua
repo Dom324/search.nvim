@@ -5,30 +5,30 @@ local M = {}
 ---@param content string | string[] | nil
 ---@return any
 function M.set_component_buffer_content(component, content)
-  if component.bufnr == nil then
+    if component.bufnr == nil then
+        return component
+    end
+
+    ---@type string[]
+    local c
+    if type(content) == "string" then
+        c = vim.fn.split(content, "\n")
+    elseif type(content) == "table" then
+        c = content
+    else
+        c = { "" }
+    end
+
+    local modifiable = vim.api.nvim_get_option_value("modifiable", { buf = component.bufnr })
+    if not modifiable then
+        vim.api.nvim_set_option_value("modifiable", true, { buf = component.bufnr })
+    end
+
+    vim.api.nvim_buf_set_lines(component.bufnr, 0, -1, false, c)
+    vim.api.nvim_set_option_value("modified", false, { buf = component.bufnr })
+    vim.api.nvim_set_option_value("modifiable", modifiable, { buf = component.bufnr })
+
     return component
-  end
-
-  ---@type string[]
-  local c
-  if type(content) == "string" then
-    c = vim.fn.split(content, "\n")
-  elseif type(content) == "table" then
-    c = content
-  else
-    c = { "" }
-  end
-
-  local modifiable = vim.api.nvim_get_option_value("modifiable", { buf = component.bufnr })
-  if not modifiable then
-    vim.api.nvim_set_option_value("modifiable", true, { buf = component.bufnr })
-  end
-
-  vim.api.nvim_buf_set_lines(component.bufnr, 0, -1, false, c)
-  vim.api.nvim_set_option_value("modified", false, { buf = component.bufnr })
-  vim.api.nvim_set_option_value("modifiable", modifiable, { buf = component.bufnr })
-
-  return component
 end
 
 ---
@@ -36,54 +36,54 @@ end
 ---@param value? any
 ---@return any
 function M.set_component_value(component, value)
-  vim.schedule(function()
-    if not value then
-      value = component:get_current_value()
-    end
+    vim.schedule(function()
+        if not value then
+            value = component:get_current_value()
+        end
 
-    component:set_current_value(value)
-    if type(component.get_lines) == "function" then
-      local lines = component:get_lines()
-      vim.api.nvim_buf_set_lines(component.bufnr, 0, -1, true, lines)
-    end
-    component:redraw()
-  end)
+        component:set_current_value(value)
+        if type(component.get_lines) == "function" then
+            local lines = component:get_lines()
+            vim.api.nvim_buf_set_lines(component.bufnr, 0, -1, true, lines)
+        end
+        component:redraw()
+    end)
 
-  return component
+    return component
 end
 
 function M.isome(tbl, func)
-  for index, item in ipairs(tbl) do
-    if func(item, index) then
-      return true
+    for index, item in ipairs(tbl) do
+        if func(item, index) then
+            return true
+        end
     end
-  end
 
-  return false
+    return false
 end
 
 function M.kmap(tbl, func)
-  return M.kreduce(tbl, function(new_tbl, value, key)
-    table.insert(new_tbl, func(value, key))
-    return new_tbl
-  end, {})
+    return M.kreduce(tbl, function(new_tbl, value, key)
+        table.insert(new_tbl, func(value, key))
+        return new_tbl
+    end, {})
 end
 
 function M.imap(tbl, func)
-  return M.ireduce(tbl, function(new_tbl, value, index)
-    table.insert(new_tbl, func(value, index))
-    return new_tbl
-  end, {})
+    return M.ireduce(tbl, function(new_tbl, value, index)
+        table.insert(new_tbl, func(value, index))
+        return new_tbl
+    end, {})
 end
 
 function M.trim(str)
-  return (str:gsub("^%s*(.-)%s*$", "%1"))
+    return (str:gsub("^%s*(.-)%s*$", "%1"))
 end
 
 function M.ieach(tbl, func)
-  for index, element in ipairs(tbl) do
-    func(element, index)
-  end
+    for index, element in ipairs(tbl) do
+        func(element, index)
+    end
 end
 
 return M

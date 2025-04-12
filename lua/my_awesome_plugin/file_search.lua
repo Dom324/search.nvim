@@ -59,7 +59,6 @@ local function sort_paths(a, b)
 end
 
 function M.search(options, input_signal, results_signal, args)
-    --self.handler.on_start()
     M.stop(results_signal)
 
     results_signal.file_results = {}

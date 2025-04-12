@@ -2,9 +2,6 @@ local Job = require('plenary.job')
 
 local enums = require("my_awesome_plugin.enums")
 
-local spectre_state = require("spectre.state")
-local spectre_utils = require("spectre.utils")
-
 local Tree = require("nui.tree")
 
 local M = {}
@@ -129,7 +126,7 @@ function M.search(options, input_signal, results_signal, file_args)
                 local end_time_rg = vim.loop.hrtime()
                 local total_time_rg = (end_time_rg - start_time_rg) / 1E9
 
-                print("files found: " .. tostring(num_files_found))
+                -- print("files found: " .. tostring(num_files_found))
                 print("rg time: " .. tostring(total_time_rg))
 
                 -- if options.sort_files then

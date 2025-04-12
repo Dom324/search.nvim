@@ -42,7 +42,7 @@ function M.initialize_signals()
 end
 
 function M.reset_querry_state()
-  query_signal = M.defaults.query_signal
+  -- query_signal = M.defaults.query_signal
 
   utils.set_component_buffer_content(M.renderer:get_component_by_id("search_query"), "")
   utils.set_component_buffer_content(M.renderer:get_component_by_id("replace_query"), "")
@@ -50,11 +50,11 @@ function M.reset_querry_state()
 end
 
 function M.reset_search_results_state()
-  search_results_signal = M.defaults.search_results_signal
+  -- search_results_signal = M.defaults.search_results_signal
 end
 
 function M.reset_file_results_state()
-  file_results_signal = M.defaults.file_results_signal
+  -- file_results_signal = M.defaults.file_results_signal
 end
 
 function M.reset_signal_state_and_component_buffers()

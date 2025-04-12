@@ -33,59 +33,28 @@ local SEARCH_CWD_GLOBAL = 1
 --local SEARCH_CMD_REGEX = 1
 --local SEARCH_CMD_FUZZY = 2
 
-function initialize_querry_state()
-  query_signal = n.create_signal({
-    search_query = "",
-    replace_query = "",
-    is_case_insensitive_checked = false,
-    is_whole_word_checked = false,
-
-    globs = {},
-    is_hidden_checked = false,
-    is_ignored_checked = false,
-    search_cwd = SEARCH_CWD_PROJECT,
-    search_cwd_str = SEARCH_CWD_PROJECT_STR,
-  })
-  search_results_signal = n.create_signal({
-    search_results = {},
-    is_search_loading = false,
-    search_info = "",
-  })
-  file_results_signal = n.create_signal({
-    is_file_search_loading = false,
-    file_results = {},
-    search_info = ""
-  })
-end
-
 local M = {}
 
-function M.reset_querry_state()
-  query_signal.search_query = ""
-  utils.set_component_buffer_content(M.renderer:get_component_by_id("search_query"), "")
-  query_signal.replace_query = ""
-  utils.set_component_buffer_content(M.renderer:get_component_by_id("replace_query"), "")
-  query_signal.is_case_insensitive_checked = false
-  query_signal.is_whole_word_checked = false
+function M.initialize_signals()
+  query_signal = n.create_signal(M.defaults.query_signal)
+  search_results_signal = n.create_signal(M.defaults.search_results_signal)
+  file_results_signal = n.create_signal(M.defaults.file_results_signal)
+end
 
-  query_signal.globs = {}
+function M.reset_querry_state()
+  query_signal = M.defaults.query_signal
+
+  utils.set_component_buffer_content(M.renderer:get_component_by_id("search_query"), "")
+  utils.set_component_buffer_content(M.renderer:get_component_by_id("replace_query"), "")
   utils.set_component_buffer_content(M.renderer:get_component_by_id("globs"), {})
-  query_signal.is_hidden_checked = false
-  query_signal.is_ignored_checked = false
-  query_signal.search_cwd = SEARCH_CWD_PROJECT
-  query_signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
 end
 
 function M.reset_search_results_state()
-  search_results_signal.search_results = {}
-  search_results_signal.is_search_loading = false
-  search_results_signal.search_info = ""
+  search_results_signal = M.defaults.search_results_signal
 end
 
 function M.reset_file_results_state()
-  file_results_signal.is_file_search_loading = false
-  file_results_signal.file_results = {}
-  file_results_signal.search_info = ""
+  file_results_signal = M.defaults.file_results_signal
 end
 
 function M.reset_signal_state_and_component_buffers()
@@ -101,6 +70,31 @@ function M.toggle()
 
   local padding_horizontal = math.floor(win_width * 0.1)
   local padding_vertical = math.floor(win_height * 0.025)
+
+  M.defaults = {
+    query_signal = {
+      search_query = "",
+      replace_query = "",
+      is_case_insensitive_checked = false,
+      is_whole_word_checked = false,
+
+      globs = {},
+      is_hidden_checked = false,
+      is_ignored_checked = false,
+      search_cwd = SEARCH_CWD_PROJECT,
+      search_cwd_str = SEARCH_CWD_PROJECT_STR,
+    },
+    search_results_signal = {
+        search_results = {},
+        is_search_loading = false,
+        search_info = "",
+    },
+    file_results_signal = {
+        is_file_search_loading = false,
+        file_results = {},
+        search_info = ""
+    }
+  }
 
   local renderer = n.create_renderer({
     width = win_width - 2 * padding_horizontal,
@@ -122,9 +116,9 @@ function M.toggle()
     -- end
   end)
 
-  local initialize_querry = not options.preserve_querry_on_close or _G["query_signal"] == nil
-  if initialize_querry then
-    initialize_querry_state()
+  local initialize_signals = not options.preserve_querry_on_close or _G["query_signal"] == nil
+  if initialize_signals then
+    M.initialize_signals()
   end
 
   local subscription_search = query_signal:observe(function(prev, curr)

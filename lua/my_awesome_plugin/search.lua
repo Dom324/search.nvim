@@ -203,10 +203,10 @@ function M.toggle()
             max_lines = 1,
             flex = 1,
             value = query_signal.globs:map(function(paths)
-              return table.concat(paths, ",")
+              return table.concat(paths, " ")
             end),
             on_change = fn.debounce(function(value)
-              query_signal.globs = fn.ireject(fn.imap(vim.split(value, ","), fn.trim), function(path)
+              query_signal.globs = fn.ireject(fn.imap(vim.split(value, " "), fn.trim), function(path)
                 return path == ""
               end)
             end, 400),

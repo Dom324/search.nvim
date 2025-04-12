@@ -6,6 +6,8 @@ local search_tree = require("my_awesome_plugin.search_tree")
 local file_tree = require("my_awesome_plugin.file_tree")
 local file_search = require("my_awesome_plugin.file_search")
 
+local utils = require("my_awesome_plugin.utils")
+
 local n = require("nui-components")
 local spinner_formats = require("nui-components.utils.spinner-formats")
 
@@ -56,38 +58,41 @@ function initialize_querry_state()
   })
 end
 
-function reset_querry_state()
+local M = {}
+
+function M.reset_querry_state()
   query_signal.search_query = ""
+  utils.set_component_buffer_content(M.renderer:get_component_by_id("search_query"), "")
   query_signal.replace_query = ""
+  utils.set_component_buffer_content(M.renderer:get_component_by_id("replace_query"), "")
   query_signal.is_case_insensitive_checked = false
   query_signal.is_whole_word_checked = false
 
   query_signal.globs = {}
+  utils.set_component_buffer_content(M.renderer:get_component_by_id("globs"), {})
   query_signal.is_hidden_checked = false
   query_signal.is_ignored_checked = false
   query_signal.search_cwd = SEARCH_CWD_PROJECT
   query_signal.search_cwd_str = SEARCH_CWD_PROJECT_STR
 end
 
-function reset_search_results_state()
+function M.reset_search_results_state()
   search_results_signal.search_results = {}
   search_results_signal.is_search_loading = false
   search_results_signal.search_info = ""
 end
 
-function reset_file_results_state()
+function M.reset_file_results_state()
   file_results_signal.is_file_search_loading = false
   file_results_signal.file_results = {}
   file_results_signal.search_info = ""
 end
 
-function reset_signal_state()
-  reset_querry_state()
-  reset_file_results_state()
-  reset_search_results_state()
+function M.reset_signal_state_and_component_buffers()
+  M.reset_querry_state()
+  M.reset_file_results_state()
+  M.reset_search_results_state()
 end
-
-local M = {}
 
 function M.toggle()
 
@@ -106,6 +111,16 @@ function M.toggle()
       col = padding_horizontal,
     },
   })
+
+  renderer:on_mount(function()
+    M.renderer = renderer
+
+    -- utils.attach_resize(augroup, renderer, ui)
+
+    -- if c.ui.autoclose then
+    --   utils.attach_autoclose(renderer)
+    -- end
+  end)
 
   local initialize_querry = not options.preserve_querry_on_close or _G["query_signal"] == nil
   if initialize_querry then
@@ -160,7 +175,7 @@ function M.toggle()
       if #glob_str > 2 then
         file_search.search(options, curr, file_results_signal, args)
       else
-        reset_file_results_state()
+        M.reset_file_results_state()
       end
     end
 
@@ -168,7 +183,7 @@ function M.toggle()
       if #curr.search_query > 2 then
         engine.search(options, curr, search_results_signal, args)
       else
-        reset_search_results_state()
+        M.reset_search_results_state()
       end
     end
 
@@ -188,6 +203,7 @@ function M.toggle()
         n.columns(
           { size = 2 },
           n.text_input({
+            id = "globs",
             border_label = "File glob",
             autofocus = true,
             max_lines = 1,
@@ -263,7 +279,7 @@ function M.toggle()
             border_label = CLEAR_KEY,
             global_press_key = CLEAR_KEY,
             on_press = function()
-              reset_signal_state()
+              M.reset_signal_state_and_component_buffers()
             end,
           }),
           n.button({
@@ -333,6 +349,7 @@ function M.toggle()
         n.columns(
           { size = 2 },
           n.text_input({
+            id = "search_query",
             border_label = "Search",
             autofocus = true,
             max_lines = 1,
@@ -353,6 +370,7 @@ function M.toggle()
         ),
         n.gap(1),
         n.text_input({
+          id = "replace_query",
           border_label = "Replace",
           autofocus = true,
           max_lines = 1,

@@ -1,9 +1,8 @@
 local utils = require("my_awesome_plugin.utils")
-local options = require("my_awesome_plugin.config").options
-
-local engine = require("my_awesome_plugin.engine2")
 local signal = require("my_awesome_plugin.signal")
+local options = require("my_awesome_plugin.config").options
 local file_search = require("my_awesome_plugin.file_search")
+local text_search = require("my_awesome_plugin.text_search")
 
 local M = {}
 
@@ -72,14 +71,14 @@ function M.subscription(prev, curr)
 
     if diff_search then
         if #curr.search_query > 2 then
-            engine.search(options, curr, signal.search_results_signal, args)
+            text_search.search(options, curr, signal.search_results_signal, args)
         else
             signal.reset_search_results_state()
         end
     end
 
     if not (prev.replace_query == curr.replace_query) and #curr.search_query > 2 then
-        signal.search_results_signal.search_results = engine.process(curr)
+        signal.search_results_signal.search_results = text_search.process(curr)
     end
 end
 

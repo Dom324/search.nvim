@@ -1,4 +1,4 @@
-local search_tree = require("my_awesome_plugin.search_tree")
+local text_tree = require("lua.my_awesome_plugin.text_tree")
 local file_tree = require("my_awesome_plugin.file_tree")
 local signal = require("my_awesome_plugin.signal")
 local enums = require("my_awesome_plugin.enums")
@@ -244,7 +244,7 @@ return n.columns(
             })
         ),
         n.gap(1),
-        search_tree({
+        text_tree({
             search_query = signal.query_signal.search_query,
             replace_query = signal.query_signal.replace_query,
             data = signal.search_results_signal.search_results,

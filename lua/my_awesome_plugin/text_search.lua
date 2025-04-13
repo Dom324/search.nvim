@@ -119,6 +119,7 @@ function M.search(options, input_signal, results_signal, file_args)
                     end
                     local id = tostring(math.random())
                     local node = Tree.Node({ text = filename:gsub("^./", ""), _id = id }, child_arr)
+                    node:expand()
                     table.insert(tree, node)
                 end
 

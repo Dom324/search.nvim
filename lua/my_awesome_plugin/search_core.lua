@@ -22,8 +22,9 @@ function M.toggle()
         },
     })
 
+    M.renderer = renderer
     renderer:on_mount(function()
-        M.renderer = renderer
+        -- M.renderer = renderer
 
         -- utils.attach_resize(augroup, renderer, ui)
 
@@ -40,7 +41,7 @@ function M.toggle()
     local subscription_search = signal.query_signal:observe(subscription)
 
     local body = require("my_awesome_plugin.body")
-    renderer:render(body)
+    M.renderer:render(body)
 end
 
 return M

@@ -147,7 +147,6 @@ return n.columns(
             search_query = signal.query_signal.search_query,
             replace_query = signal.query_signal.replace_query,
             data = signal.file_results_signal.file_results,
-            --origin_winid = renderer:get_origin_winid(),
             hidden = signal.file_results_signal.file_results:map(function(value)
                 return #value == 0
             end),
@@ -248,7 +247,6 @@ return n.columns(
             search_query = signal.query_signal.search_query,
             replace_query = signal.query_signal.replace_query,
             data = signal.search_results_signal.search_results,
-            -- origin_winid = renderer:get_origin_winid(),
             hidden = signal.search_results_signal.search_results:map(function(value)
                 return #value == 0
             end),

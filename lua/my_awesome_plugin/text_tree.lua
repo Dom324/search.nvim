@@ -1,5 +1,6 @@
 local n = require("nui-components")
 local utils = require("my_awesome_plugin.utils")
+local search_core = require("my_awesome_plugin.search_core")
 
 local function replace_handler(tree, node)
     return {

@@ -1,8 +1,7 @@
 local Job = require('plenary.job')
+local Tree = require("nui.tree")
 
 local enums = require("my_awesome_plugin.enums")
-
-local Tree = require("nui.tree")
 
 local M = {}
 

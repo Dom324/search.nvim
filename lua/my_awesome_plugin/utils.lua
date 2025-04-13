@@ -62,20 +62,6 @@ function M.isome(tbl, func)
     return false
 end
 
-function M.kmap(tbl, func)
-    return M.kreduce(tbl, function(new_tbl, value, key)
-        table.insert(new_tbl, func(value, key))
-        return new_tbl
-    end, {})
-end
-
-function M.imap(tbl, func)
-    return M.ireduce(tbl, function(new_tbl, value, index)
-        table.insert(new_tbl, func(value, index))
-        return new_tbl
-    end, {})
-end
-
 function M.trim(str)
     return (str:gsub("^%s*(.-)%s*$", "%1"))
 end

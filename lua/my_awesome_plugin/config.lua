@@ -17,6 +17,23 @@ M.defaults = {
     sort_files = true,
     max_files_to_display = 100,
     max_matches_to_display = 100,
+    keymap = {
+        close = "<Esc>",
+        focus_next = "<Tab>",
+        focus_prev = "<S-Tab>",
+        focus_left = nil,
+        focus_right = nil,
+        focus_up = nil,
+        focus_down = nil,
+
+        word_key = "<C-w>",
+        capital_key = "<C-a>",
+        hidden_key = "<C-h>",
+        ignored_key = "<C-i>",
+        search_cwd_key = "<C-d>",
+        quickfix_key = "<C-c>",
+        clear_key = "<C-r>"
+    }
 }
 
 ---@class Config

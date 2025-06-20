@@ -20,6 +20,15 @@ function M.toggle()
             row = padding_vertical,
             col = padding_horizontal,
         },
+        keymap = {
+            close = options.keymap.close,
+            focus_next = options.keymap.focus_next,
+            focus_prev = options.keymap.focus_prev,
+            focus_left = options.keymap.focus_left,
+            focus_right = options.keymap.focus_right,
+            focus_up = options.keymap.focus_up,
+            focus_down = options.keymap.focus_down,
+        }
     })
 
     M.renderer = renderer

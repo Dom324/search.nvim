@@ -35,12 +35,12 @@ function M.initialize_signals()
     M.file_results_signal = n.create_signal(M.defaults.file_results_signal)
 end
 
-function M.reset_querry_state()
+function M.reset_querry_state(renderer)
     -- query_signal = M.defaults.query_signal
 
-    utils.set_component_buffer_content(M.renderer:get_component_by_id("search_query"), "")
-    utils.set_component_buffer_content(M.renderer:get_component_by_id("replace_query"), "")
-    utils.set_component_buffer_content(M.renderer:get_component_by_id("glob_query"), "")
+    utils.set_component_buffer_content(renderer:get_component_by_id("search_query"), "")
+    utils.set_component_buffer_content(renderer:get_component_by_id("replace_query"), "")
+    utils.set_component_buffer_content(renderer:get_component_by_id("glob_query"), "")
 end
 
 function M.reset_search_results_state()
@@ -51,8 +51,8 @@ function M.reset_file_results_state()
     -- file_results_signal = M.defaults.file_results_signal
 end
 
-function M.reset_signal_state_and_component_buffers()
-    M.reset_querry_state()
+function M.reset_signal_state_and_component_buffers(renderer)
+    M.reset_querry_state(renderer)
     M.reset_file_results_state()
     M.reset_search_results_state()
 end

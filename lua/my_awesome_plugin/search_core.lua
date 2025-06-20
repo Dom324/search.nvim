@@ -7,6 +7,7 @@ require("my_awesome_plugin.highlight")
 local M = {}
 
 function M.toggle()
+
     local win_width = vim.api.nvim_win_get_width(0)
     local win_height = vim.api.nvim_win_get_height(0)
 
@@ -32,7 +33,6 @@ function M.toggle()
         }
     })
 
-    M.renderer = renderer
     renderer:on_mount(function()
         -- M.renderer = renderer
 
@@ -41,6 +41,11 @@ function M.toggle()
         -- if c.ui.autoclose then
         --   utils.attach_autoclose(renderer)
         -- end
+        -- utils.attach_autoclose(renderer)
+    end)
+
+    renderer:on_unmount(function()
+        -- pcall(vim.api.nvim_del_augroup_by_name, augroup)
     end)
 
     local initialize_signals = not options.preserve_querry_on_close or signal.query_signal == nil
@@ -51,7 +56,7 @@ function M.toggle()
     local subscription_search = signal.query_signal:observe(subscription)
 
     local body = require("my_awesome_plugin.body")
-    M.renderer:render(body)
+    renderer:render(body(renderer))
 end
 
 return M

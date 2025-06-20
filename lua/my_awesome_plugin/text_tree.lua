@@ -14,7 +14,38 @@ local function replace_handler(tree, node)
     }
 end
 
-local function on_select(origin_winid)
+-- test = {
+--     ["_depth"] = 1,
+--     ["text"] = lua/my_awesome_plugin/file_search.lua,
+--     ["_id"] = 0.57989612160986,
+--     ["_is_expanded"] = false,
+--     ["_child_ids"] = {
+--         [1] = 0.81806937564319,
+--         [2] = 0.81204520094404,
+--         [3] = 0.12209148249636,} ,
+--     ["_initialized"] = true,
+-- }
+--
+-- idk = {
+--     ["_depth"] = 2,
+--     ["text"] =     local split_b = vim.split(b.text, "/", { plain = true, trimempty = true }),
+--     ["_id"] = 0.81204520094404,
+--     ["_is_expanded"] = false,
+--     ["_parent_id"] = 0.57989612160986,
+--     ["diff"] = {
+--         ["search"] = {
+--             [1] = {
+--             [1] = 32,
+--             [2] = 36,}
+--         ,} ,
+--         ["text"] =     local split_b = vim.split(b.text, "/", { plain = true, trimempty = true }),
+--         ["replace"] = ,
+--     } ,
+--     ["_initialized"] = true,
+-- }
+
+local function on_select(renderer)
+    local origin_winid = renderer:get_origin_winid()
     return function(node, component)
         local tree = component:get_tree()
 
@@ -142,7 +173,7 @@ local function mappings(search_query, replace_query)
     end
 end
 
-local function search_tree(props)
+local function search_tree(props, renderer)
     return n.tree({
         border_style = "none",
         flex = 50,
@@ -154,7 +185,7 @@ local function search_tree(props)
         data = props.data,
         mappings = mappings(props.search_query, props.replace_query),
         prepare_node = prepare_node,
-        on_select = on_select(props.origin_winid),
+        on_select = on_select(renderer),
     })
 end
 

@@ -60,6 +60,7 @@ local function on_select(renderer)
         end
 
         local entry = node.entry
+        renderer:close()
 
         if vim.api.nvim_win_is_valid(origin_winid) then
             local escaped_filename = vim.fn.fnameescape(entry.filename)

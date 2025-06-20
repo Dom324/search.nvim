@@ -9,9 +9,9 @@ end
 
 local function prepare_node(node, line, component)
     if node.is_marked then
-        line:append("✔ ", "String")
+        line:append("● ", "String")
     else
-        line:append("◻ ", "Comment")
+        line:append("○ ", "Comment")
     end
 
     local _, devicons = pcall(require, "nvim-web-devicons")

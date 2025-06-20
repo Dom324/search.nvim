@@ -104,22 +104,70 @@ function M.search(options, input_signal, results_signal, file_args)
                 results_signal.is_search_loading = false
 
 
+                -- local tree = {}
+                -- for filename, file in pairs(new_matches_table) do
+                --     local file_childs = {}
+                --
+                --     for _, matched_line in ipairs(file.matched_lines) do
+                --         local line_childs = {}
+                --
+                --         for _, submatch in pairs(matched_line.submatches) do
+                --             local id = tostring(math.random())
+                --
+                --             local children = Tree.Node({
+                --                 -- text = "idk",
+                --                 -- replace = "",
+                --                 -- start_col = submatch.start,
+                --                 -- end_col = submatch["end"],
+                --                 _id = id
+                --             })
+                --             table.insert(line_childs, children)
+                --         end
+                --
+                --         local id = tostring(math.random())
+                --         local children = Tree.Node({ text = matched_line.lines.text, line_number = matched_line.line_number, _id = id }, line_childs)
+                --         table.insert(file_childs, children)
+                --     end
+                --
+                --     local id = tostring(math.random())
+                --     local node = Tree.Node({ text = filename:gsub("^./", ""), _id = id }, file_childs)
+                --
+                --     node:expand()
+                --
+                --     table.insert(tree, node)
+                -- end
+
                 local tree = {}
                 for filename, file in pairs(new_matches_table) do
-                    local child_arr = {}
+                    local file_childs = {}
+
                     for _, matched_line in ipairs(file.matched_lines) do
-                        for _, submatch in pairs(matched_line.submatches) do
-                            local id = tostring(math.random())
-                            -- local search = { submatch.start, submatch.end }
-                            local search = { submatch.start, submatch["end"] }
-                            local diff = { search = { search }, replace = "", text = matched_line.lines.text }
-                            local children = Tree.Node({ text = matched_line.lines.text, _id = id, diff = diff, entry = nil })
-                            table.insert(child_arr, children)
-                        end
+                        local line_childs = {}
+
+                        -- for _, submatch in pairs(matched_line.submatches) do
+                        --     local id2 = tostring(math.random())
+                        --
+                        --     local children2 = Tree.Node({
+                        --         text = "idk",
+                        --         replace = "",
+                        --         start_col = submatch.start,
+                        --         end_col = submatch["end"],
+                        --         _id = id2
+                        --     })
+                        --     table.insert(line_childs, children2)
+                        --     -- table.insert(file_childs, children)
+                        -- end
+
+                        local id = tostring(math.random())
+                        local children = Tree.Node({ text = matched_line.lines.text, line_number = matched_line.line_number, submatches = matched_line.submatches, _id = id })
+                        table.insert(file_childs, children)
                     end
+
                     local id = tostring(math.random())
-                    local node = Tree.Node({ text = filename:gsub("^./", ""), _id = id }, child_arr)
+                    local node = Tree.Node({ text = filename:gsub("^./", ""), _id = id }, file_childs)
+
                     node:expand()
+
                     table.insert(tree, node)
                 end
 

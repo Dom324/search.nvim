@@ -2,54 +2,26 @@ local n = require("nui-components")
 local utils = require("my_awesome_plugin.utils")
 local search_core = require("my_awesome_plugin.search_core")
 
-local function replace_handler(tree, node)
-    return {
-        on_done = function(result)
-            if result.ref then
-                node.ref = result.ref
-                tree:render()
-            end
-        end,
-        on_error = function(_) end,
-    }
+local function dump(o)
+    if type(o) == 'table' then
+        local s = '{ '
+        for k, v in pairs(o) do
+            if type(k) ~= 'number' then k = '"' .. k .. '"' end
+            s = s .. '[' .. k .. '] = ' .. dump(v) .. ','
+        end
+        return s .. '} '
+    else
+        return tostring(o)
+    end
 end
-
--- test = {
---     ["_depth"] = 1,
---     ["text"] = lua/my_awesome_plugin/file_search.lua,
---     ["_id"] = 0.57989612160986,
---     ["_is_expanded"] = false,
---     ["_child_ids"] = {
---         [1] = 0.81806937564319,
---         [2] = 0.81204520094404,
---         [3] = 0.12209148249636,} ,
---     ["_initialized"] = true,
--- }
---
--- idk = {
---     ["_depth"] = 2,
---     ["text"] =     local split_b = vim.split(b.text, "/", { plain = true, trimempty = true }),
---     ["_id"] = 0.81204520094404,
---     ["_is_expanded"] = false,
---     ["_parent_id"] = 0.57989612160986,
---     ["diff"] = {
---         ["search"] = {
---             [1] = {
---             [1] = 32,
---             [2] = 36,}
---         ,} ,
---         ["text"] =     local split_b = vim.split(b.text, "/", { plain = true, trimempty = true }),
---         ["replace"] = ,
---     } ,
---     ["_initialized"] = true,
--- }
 
 local function on_select(renderer)
     local origin_winid = renderer:get_origin_winid()
     return function(node, component)
+        print(dump(node))
         local tree = component:get_tree()
 
-        if node:has_children() then
+        if node._depth == 1 then
             if node:is_expanded() then
                 node:collapse()
             else
@@ -59,16 +31,20 @@ local function on_select(renderer)
             return tree:render()
         end
 
-        local entry = node.entry
+        local parent = tree:get_node(node._parent_id)
+        local filename = parent.text
+        print(dump(parent))
+        print(filename)
+
         renderer:close()
 
         if vim.api.nvim_win_is_valid(origin_winid) then
-            local escaped_filename = vim.fn.fnameescape(entry.filename)
+            local escaped_filename = vim.fn.fnameescape(filename)
 
             vim.api.nvim_set_current_win(origin_winid)
             vim.api.nvim_command([[execute "normal! m` "]])
             vim.cmd("e " .. escaped_filename)
-            vim.api.nvim_win_set_cursor(0, { entry.lnum, entry.col - 1 })
+            vim.api.nvim_win_set_cursor(0, { node.line_number, node.submatches[1].start })
         end
     end
 end
@@ -89,52 +65,47 @@ local function prepare_node(node, line, component)
         return line
     end
 
-    local is_replacing = #node.diff.replace > 0
-    local search_highlight_group = component:hl_group(is_replacing and "SpectreSearchOldValue" or "SpectreSearchValue")
+    local is_replacing = false --#node.diff.replace > 0
+    local search_highlight_group = component:hl_group(is_replacing and "@diff.minus" or "@diff.plus")
+    print(dump(search_highlight_group))
     local default_text_highlight = component:hl_group("SpectreCodeLine")
 
-    local _, empty_spaces = string.find(node.diff.text, "^%s*")
+    -- local _, empty_spaces = string.find(node.diff.text, "^%s*")
     local ref = node.ref
 
     if ref then
         line:append("✔ ", component:hl_group("SpectreReplaceSuccess"))
     end
 
-    if #node.diff.search > 0 then
-        local code_text = utils.trim(node.diff.text)
+    for _, submatch in ipairs(node.submatches) do
+        local start_col = node.submatches[1].start
+        local end_col = node.submatches[1]["end"]
 
-        utils.ieach(node.diff.search, function(value, index)
-            local start = value[1] - empty_spaces
-            local end_ = value[2] - empty_spaces
+        local text_before_match = string.sub(node.text, 1, start_col)
+        local match = string.sub(node.text, start_col, end_col)
+        print(dump(node.submatches))
 
-            if index == 1 then
-                line:append(string.sub(code_text, 1, start), default_text_highlight)
-            end
+        line:append(text_before_match, default_text_highlight)
+        line:append(match, search_highlight_group)
 
-            local search_text = string.sub(code_text, start + 1, end_)
-            line:append(search_text, search_highlight_group)
+        -- local replace_diff_value = node.diff.replace[index]
 
-            local replace_diff_value = node.diff.replace[index]
+        if replace_diff_value then
+            local replace_text =
+                string.sub(code_text, replace_diff_value[1] + 1 - empty_spaces, replace_diff_value[2] - empty_spaces)
+            line:append(replace_text, component:hl_group("SpectreSearchNewValue"))
+            end_ = replace_diff_value[2] - empty_spaces
+        end
 
-            if replace_diff_value then
-                local replace_text =
-                    string.sub(code_text, replace_diff_value[1] + 1 - empty_spaces, replace_diff_value[2] - empty_spaces)
-                line:append(replace_text, component:hl_group("SpectreSearchNewValue"))
-                end_ = replace_diff_value[2] - empty_spaces
-            end
-
-            if index == #node.diff.search then
-                line:append(string.sub(code_text, end_ + 1), default_text_highlight)
-            end
-        end)
+        -- if index == #node.diff.search then
+            -- line:append(string.sub(code_text, end_col + 1), default_text_highlight)
+        -- end
     end
 
     return line
 end
 
 local function mappings(search_query, replace_query)
-    local spectre_state_utils = require("spectre.state_utils")
-
     return function(component)
         return {
             {
@@ -151,22 +122,17 @@ local function mappings(search_query, replace_query)
                     local has_children = focused_node:has_children()
 
                     if not has_children then
-                        local replacer_creator = spectre_state_utils.get_replace_creator()
-                        local replacer =
-                            replacer_creator:new(spectre_state_utils.get_replace_engine_config(),
-                                replace_handler(tree, focused_node))
-
                         local entry = focused_node.entry
 
-                        replacer:replace({
-                            lnum = entry.lnum,
-                            col = entry.col,
-                            cwd = vim.fn.getcwd(),
-                            display_lnum = 0,
-                            filename = entry.filename,
-                            search_text = search_query:get_value(),
-                            replace_text = replace_query:get_value(),
-                        })
+                        -- replacer:replace({
+                        --     lnum = entry.lnum,
+                        --     col = entry.col,
+                        --     cwd = vim.fn.getcwd(),
+                        --     display_lnum = 0,
+                        --     filename = entry.filename,
+                        --     search_text = search_query:get_value(),
+                        --     replace_text = replace_query:get_value(),
+                        -- })
                     end
                 end,
             },

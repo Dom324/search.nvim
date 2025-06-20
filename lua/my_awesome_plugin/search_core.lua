@@ -2,6 +2,7 @@ local subscription = require("my_awesome_plugin.subscription").subscription
 local options = require("my_awesome_plugin.config").options
 local signal = require("my_awesome_plugin.signal")
 local n = require("nui-components")
+require("my_awesome_plugin.highlight")
 
 local M = {}
 
